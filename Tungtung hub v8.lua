@@ -36,7 +36,7 @@ if ge.__BkSae then
 		if rawget(c, "GetMoveVector") then c.GetMoveVector = nil end
 	end)
 end
-local st ={on = false, g = 0, cn = {}, bl = {}, bk = {}, sl = {}, so = nil, sc = nil, dc = nil, n = 0, ms = "Idle", at = nil, h0 = nil, rz = 4, mr = {}, az = {}, wf = nil, wo = false, bx = false, fp = false, gr = false, ra = false, rg = 0, rx = false, rv = false, rmv = nil, ss = false, sg = 0, sx = false, sc3 = 0, sb = false, gx = false, gg = 0, lx = false, lb = false, tq = false, th = 0, tx = false, tb = false, rsh = 0, pu = nil, dw = 0.3, pc = 0, ps = false, es = false, sp = {}, se = {}, pf = nil, fm = 1.15, gc = 0, ct = nil, sr = false, fz = false, nd = true, qc = {}, pv = false, mc = {}, me = {}, ft = 0, fb = nil, hq = false, ta = {}, tc = {}, pi = false, bt = nil, tr = nil, uc = {}, uh = {}, uu = 0, bf = false, bo = false, bi = 0, ap = false, mq = 0, ah = false, hf = {}}
+local st ={on = false, g = 0, cn = {}, bl = {}, bk = {}, sl = {}, so = nil, sc = nil, dc = nil, n = 0, ms = "Idle", at = nil, h0 = nil, rz = 2, mr = {}, az = {}, wf = nil, wo = false, bx = false, fp = false, gr = false, ra = false, rg = 0, rx = false, rv = false, rmv = nil, ss = false, sg = 0, sx = false, sc3 = 0, sb = false, gx = false, gg = 0, lx = false, lb = false, tq = false, th = 0, tx = false, tb = false, rsh = 0, pu = nil, dw = 0.3, pc = 0, ps = false, es = false, sp = {}, se = {}, pf = nil, fm = 1.15, gc = 0, ct = nil, sr = false, fz = false, nd = true, qc = {}, pv = false, mc = {}, me = {}, ft = 0, fb = nil, hq = false, ta = {}, tc = {}, pi = false, bt = nil, tr = nil, uc = {}, uh = {}, uu = 0, bf = false, bo = false, bi = 0, ap = false, mq = 0, ah = false, hf = {}}
 ge.__BkSae = st
 pcall(function() if not isfolder("BaKhi") then makefolder("BaKhi") end end)
 
@@ -646,17 +646,17 @@ local function hm(rq)
 	local q = h.Position - lv * (lv:Dot(h.Position - lq) - 48)
 	local en, y = Vector3.new(q.X, lq.Y + 3, sz(q.Z, lq, lv)), lq.Y + 45
 	if rq then
-		local k = 0
-		for _, x in ze() do
-			if x < h.Position.X then
-				k += 1
-				if k % st.rz == 0 and x + 10 > en.X + 150 then
-					lg("Relay At " .. math.floor(x + 10))
-					local ok, wy = hp(Vector3.new(x + 10, en.Y, q.Z), y, true)
-					if not ok then return false, wy end
-					ok, wy = rp()
-					if not ok then return false, wy end
-				end
+		local startX = h.Position.X
+		local dist = startX - en.X
+		local stops = 2
+		for i = 1, stops do
+			local rx = startX - dist * i / (stops + 1)
+			if rx > en.X + 150 then
+				lg("Relay At " .. math.floor(rx))
+				local ok, wy = hp(Vector3.new(rx, en.Y, q.Z), y, true)
+				if not ok then return false, wy end
+				ok, wy = rp()
+				if not ok then return false, wy end
 			end
 		end
 	end
