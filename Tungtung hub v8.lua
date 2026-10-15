@@ -660,11 +660,12 @@ local function hm(rq)
 			end
 		end
 	end
-	local ok, wy = hp(en, y, rq)
+	local finalDrop = Vector3.new(616.02, 70.57, -395.18)
+	local ok, wy = hp(finalDrop, finalDrop.Y + 40, rq)
 	if not ok then return false, wy end
 	if not rq then
 		task.wait(0.1)
-		return mv(en - lv * 70, nil, 5)
+		return mv(finalDrop - lv * 70, nil, 5)
 	end
 	ok, wy = rp()
 	if not ok then return false, wy end
@@ -672,7 +673,7 @@ local function hm(rq)
 	local sm = o1 and type(cs) == "table" and tonumber(cs.SpeedMultiplier) or 0.9
 	local cu = o1 and type(cs) == "table" and cs.Uid
 	local n0, dw2 = st.n, nil
-	ok, wy = mv(en - lv * 70, function()
+	ok, wy = mv(finalDrop - lv * 70, function()
 		if not cr() then
 			dw2 = dw2 or dg()
 			return "Delivered"
