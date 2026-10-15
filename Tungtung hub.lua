@@ -16,6 +16,7 @@ local rm = require(rs:WaitForChild("Shared"):WaitForChild("Remotes"))
 local hh = require(rs:WaitForChild("Client"):WaitForChild("HiddenUIHandler"))
 local tq = require(rs:WaitForChild("Packages"):WaitForChild("TopBarPlus"))
 local dr = ad.Directory or ad
+
 repeat
 	task.wait(0.2)
 	local c = lp.Character
@@ -36,15 +37,93 @@ if ge.__BkSae then
 		if rawget(c, "GetMoveVector") then c.GetMoveVector = nil end
 	end)
 end
-local st ={on = false, g = 0, cn = {}, bl = {}, bk = {}, sl = {}, so = nil, sc = nil, dc = nil, n = 0, ms = "Idle", at = nil, h0 = nil, rz = 2, mr = {}, az = {}, wf = nil, wo = false, bx = false, fp = false, gr = false, ra = false, rg = 0, rx = false, rv = false, rmv = nil, ss = false, sg = 0, sx = false, sc3 = 0, sb = false, gx = false, gg = 0, lx = false, lb = false, tq = false, th = 0, tx = false, tb = false, rsh = 0, pu = nil, dw = 0.3, pc = 0, ps = false, es = false, sp = {}, se = {}, pf = nil, fm = 1.15, gc = 0, ct = nil, sr = false, fz = false, nd = true, qc = {}, pv = false, mc = {}, me = {}, ft = 0, fb = nil, hq = false, ta = {}, tc = {}, pi = false, bt = nil, tr = nil, uc = {}, uh = {}, uu = 0, bf = false, bo = false, bi = 0, ap = false, mq = 0, ah = false, hf = {}}
+
+local st = {on = false, g = 0, cn = {}, bl = {}, bk = {}, sl = {}, so = nil, sc = nil, dc = nil, n = 0, ms = "Idle", at = nil, h0 = nil, rz = 2, mr = {}, az = {}, wf = nil, wo = false, bx = false, fp = false, gr = false, ra = false, rg = 0, rx = false, rv = false, rmv = nil, ss = false, sg = 0, sx = false, sc3 = 0, sb = false, gx = false, gg = 0, lx = false, lb = false, tq = false, th = 0, tx = false, tb = false, rsh = 0, pu = nil, dw = 0.3, pc = 0, ps = false, es = false, sp = {}, se = {}, pf = nil, fm = 1.15, gc = 0, ct = nil, sr = false, fz = false, nd = true, qc = {}, pv = false, mc = {}, me = {}, ft = 0, fb = nil, hq = false, ta = {}, tc = {}, pi = false, bt = nil, tr = nil, uc = {}, uh = {}, uu = 0, bf = false, bo = false, bi = 0, ap = false, mq = 0, ah = false, hf = {}, navStud = 300, smoothHome = true, stepDelay = 0.047, ec = 0, eq = {}, el = nil}
 ge.__BkSae = st
-pcall(function() if not isfolder("BaKhi") then makefolder("BaKhi") end end)
+pcall(function() if not isfolder("TungTung") then makefolder("TungTung") end end)
+
+local fpsBoosted = false
+local function bo2()
+	if fpsBoosted then return false, "Already On" end
+	local ok, e = pcall(function()
+		local Lt = game:GetService("Lighting")
+		Lt.GlobalShadows = false
+		Lt.FogEnd = 100000
+		Lt.Brightness = 2
+		Lt.EnvironmentDiffuseScale = 0
+		Lt.EnvironmentSpecularScale = 0
+		for _, v in workspace:GetDescendants() do
+			if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") or v:IsA("Beam") then
+				v.Enabled = false
+			elseif v:IsA("Decal") or v:IsA("Texture") then
+				v.Transparency = 1
+			end
+		end
+	end)
+	if ok then fpsBoosted = true; return true, "On Until Rejoin" end
+	return false, tostring(e)
+end
+
+local LANG_DATA = {
+	vi = {
+		["General"] = "Tổng Quan",
+		["Event"] = "Sự Kiện",
+		["Misc"] = "Khác",
+		["Setting"] = "Cài Đặt",
+		["Farm"] = "Nông Trại",
+		["Pet"] = "Thú Cưng",
+		["Egg"] = "Trứng",
+		["Butterfly"] = "Bướm",
+		["Race & Star"] = "Đua & Sao Băng",
+		["Admin"] = "Quản Trị",
+		["Player"] = "Người Chơi",
+		["Game"] = "Trò Chơi",
+		["Interface"] = "Giao Diện",
+		["Language"] = "Ngôn Ngữ",
+		["Select Area"] = "Chọn Khu Vực",
+		["Select Egg"] = "Chọn Trứng",
+		["Auto Steal Egg"] = "Tự Động Trộm Trứng",
+		["Auto Place Egg"] = "Tự Động Đặt Trứng",
+		["Auto Hatch Egg"] = "Tự Động Mở Trứng",
+		["Auto Treadmill"] = "Tự Động Máy Chạy Bộ",
+		["Pet Index"] = "Chỉ Mục Thú Cưng",
+		["Leave Treadmill"] = "Rời Máy Chạy Bộ",
+		["Sell Pet Rarity"] = "Bán Thú Cưng",
+		["Auto Sell Pet"] = "Tự Động Bán Thú Cưng",
+		["Sell Egg Rarity"] = "Bán Trứng",
+		["Auto Sell Egg"] = "Tự Động Bán Trứng",
+		["Auto Butterfly"] = "Tự Động Bắt Bướm",
+		["Teleport To Station"] = "Dịch Chuyển Đến Trạm",
+		["Auto Shooting Star"] = "Tự Động Bắt Sao Băng",
+		["Auto Race"] = "Tự Động Đua Xe",
+		["Auto Red Light Green Light"] = "Tự Động Đèn Đỏ Đèn Xanh",
+		["Auto T-Rex Run"] = "Tự Động Chạy Khỏi T-Rex",
+		["Anti Stun"] = "Chống Choáng",
+		["Anti Trap"] = "Chống Bẫy",
+		["FPS Booster"] = "Tăng FPS",
+		["Effects"] = "Hiệu Ứng",
+		["Glass Density"] = "Độ Trong Kính",
+		["Boot Animation"] = "Hiệu Ứng Khởi Động",
+	},
+	en = {},
+}
+
+local currentLang = "vi"
+local function trL(s) if currentLang == "vi" and LANG_DATA.vi[s] then return LANG_DATA.vi[s] end return s end
+local function applyLang(W2)
+	for _, T in W2.Tabs do
+		T.nm.Text = trL(T.Name)
+		for _, e in T.Rows do
+			if e.Label and type(e.Name) == "string" then e.Label.Text = trL(e.Name) end
+		end
+	end
+end
 
 local function lg(s)
 	if s == st.ms then return end
 	st.ms = s
 	print("[Sae] " .. s)
-	pcall(appendfile, "BaKhi/SaeLog.txt", string.format("%s %s\n", os.date("%H:%M:%S"), s))
+	pcall(appendfile, "TungTung/SaeLog.txt", string.format("%s %s\n", os.date("%H:%M:%S"), s))
 end
 
 local function rt()
@@ -97,7 +176,8 @@ local function av(u)
 	return ok and type(r) == "table" and (r.State == "Slot" or r.State == "Dropped")
 end
 
-local function cd()
+-- ✅ CHECK MAP MỖI 3S — cache kết quả
+local function _scanEggs()
 	local ok, s = pcall(es.ReadFieldEggs)
 	if not ok or type(s) ~= "table" then return {} end
 	local o, t, ix, oc = {}, os.clock(), {}, {}
@@ -109,10 +189,28 @@ local function cd()
 			if type(x) == "table" and type(x.AssetCategory) == "string" then oc[x.AssetCategory] = true end
 		end
 	end
+	local hasAz = next(st.az) ~= nil
+	local hasMr = next(st.mr) ~= nil
 	for _, r in s.Records or {} do
 		local a = dr[r.AssetCategory]
 		local wt
-		if st.wf then wt = st.wf.a and r.AreaId == st.wf.a or st.wf.r and a and a.Rarity and a.Rarity._id == st.wf.r or false elseif st.pi then wt = ix[r.AssetCategory] ~= true and not oc[r.AssetCategory] elseif next(st.az) then wt = st.az[r.AreaId] == true else wt = a and a.Rarity and st.mr[a.Rarity._id] end
+		if st.wf then
+			wt = st.wf.a and r.AreaId == st.wf.a or st.wf.r and a and a.Rarity and a.Rarity._id == st.wf.r or false
+		elseif st.pi then
+			wt = ix[r.AssetCategory] ~= true and not oc[r.AssetCategory]
+		else
+			local aMatch = hasAz and st.az[r.AreaId] == true or false
+			local rMatch = hasMr and a and a.Rarity and st.mr[a.Rarity._id] == true or false
+			if hasAz and hasMr then
+				wt = aMatch or rMatch
+			elseif hasAz then
+				wt = aMatch
+			elseif hasMr then
+				wt = rMatch
+			else
+				wt = true
+			end
+		end
 		if a and (r.State == "Slot" or r.State == "Dropped") and typeof(r.BoundsCFrame) == "CFrame" and (st.bl[r.Uid] or 0) < t and wt then
 			o[#o + 1] = {u = r.Uid, r = r, k = tonumber(a.Rarity and a.Rarity.Rank) or 0, e = tonumber(a.EarningRate) or 0, p = r.BoundsCFrame.Position}
 		end
@@ -123,6 +221,23 @@ local function cd()
 		return x.e > y.e
 	end)
 	return o
+end
+
+local function cd()
+	local now = os.clock()
+	-- ✅ Check mỗi 3s — giữa 3s trả cache
+	if now - st.ec < 3 and #st.eq > 0 then
+		return st.eq
+	end
+	st.ec = now
+	st.eq = _scanEggs()
+	st.el = #st.eq
+	return st.eq
+end
+
+local function cdForce()
+	st.ec = 0
+	return cd()
 end
 
 local gd = {[Enum.HumanoidStateType.Running] = true, [Enum.HumanoidStateType.RunningNoPhysics] = true, [Enum.HumanoidStateType.Landed] = true}
@@ -234,7 +349,6 @@ local function sm(on)
 		st.mc[#st.mc + 1] = cb.ChildAdded:Connect(mu)
 	end
 end
-
 
 local function hv(ch, v)
 	for _, p in ch and ch:GetDescendants() or {} do
@@ -480,17 +594,25 @@ local function hp(en, y, rq, ck)
 		if rq and not cr() then return false, "Home Failed: Egg Lost" end
 		fz(true)
 		local d = Vector3.new(en.X - hr.Position.X, 0, en.Z - hr.Position.Z)
-		if d.Magnitude <= 264 then
+		local step = st.navStud or 300
+		if d.Magnitude <= step then
 			hr.CFrame = CFrame.new(en) * hr.CFrame.Rotation
 			hr.AssemblyLinearVelocity = Vector3.zero
 			return true
 		end
-		hr.CFrame = CFrame.new(hr.Position.X + d.Unit.X * 264, y, hr.Position.Z + d.Unit.Z * 264) * hr.CFrame.Rotation
+		hr.CFrame = CFrame.new(hr.Position.X + d.Unit.X * step, y, hr.Position.Z + d.Unit.Z * step) * hr.CFrame.Rotation
 		hr.AssemblyLinearVelocity = Vector3.zero
-		task.wait(0.1)
+		if st.smoothHome then
+			if st.stepDelay <= 0.001 then
+				ru.Heartbeat:Wait()
+			else
+				task.wait(st.stepDelay)
+			end
+		else
+			task.wait(0.1)
+		end
 	end
 end
-
 
 local function go(e)
 	local z0, z1 = cz()
@@ -558,6 +680,7 @@ local function tk(e)
 	repeat task.wait(0.05) until cr() or os.clock() - t > 1
 	if not cr() then return false, "Take Failed: Not Carrying" end
 	st.pu = e.u
+	cdForce()
 	return true
 end
 
@@ -577,20 +700,6 @@ local function rp()
 	if not ok then return false, "Repick " .. tostring(wy) end
 	lg(string.format("Relay %dms (Drop %dms, Take %dms)", (os.clock() - t0) * 1000, (t1 - t0 - st.dw) * 1000, (os.clock() - t1) * 1000))
 	return true
-end
-
-local function ze()
-	local w = workspace:FindFirstChild("World") or workspace:FindFirstChild("__OBJECTS")
-	local a = w and w:FindFirstChild("Areas")
-	local g = a and a:FindFirstChild("GuardAreas")
-	local o = {}
-	if not g then return o end
-	for _, z in g:GetChildren() do
-		local b = z:FindFirstChild("Bounds")
-		if b and b:IsA("BasePart") then o[#o + 1] = b.Position.X - b.Size.X / 2 end
-	end
-	table.sort(o, function(x1, x2) return x1 > x2 end)
-	return o
 end
 
 local function dg()
@@ -623,10 +732,7 @@ local function sz(z, lq, lv)
 			if c >= z0 and c <= z1 then
 				local ok = true
 				for _, t in hb do
-					if math.abs(c - t[1]) < t[2] then
-						ok = false
-						break
-					end
+					if math.abs(c - t[1]) < t[2] then ok = false break end
 				end
 				if ok then
 					if c ~= z then lg(string.format("Trap Lane %d -> %d", math.floor(z), math.floor(c))) end
@@ -645,13 +751,15 @@ local function hm(rq)
 	local lv, lq = l.CFrame.LookVector, l.Position
 	local q = h.Position - lv * (lv:Dot(h.Position - lq) - 48)
 	local en, y = Vector3.new(q.X, lq.Y + 3, sz(q.Z, lq, lv)), lq.Y + 45
+	local finalDrop = Vector3.new(616.02, 70.57, -395.18)
 	if rq then
 		local startX = h.Position.X
 		local dist = startX - en.X
 		local stops = 2
-		for i = 1, stops do
-			local rx = startX - dist * i / (stops + 1)
-			if rx > en.X + 150 then
+		lg(string.format("Home Plan | %d Stop(s) | Dist %d", stops, math.floor(dist)))
+		for i = 1, stops - 1 do
+			local rx = startX - dist * i / stops
+			if rx > en.X + 100 then
 				lg("Relay At " .. math.floor(rx))
 				local ok, wy = hp(Vector3.new(rx, en.Y, q.Z), y, true)
 				if not ok then return false, wy end
@@ -660,7 +768,6 @@ local function hm(rq)
 			end
 		end
 	end
-	local finalDrop = Vector3.new(616.02, 70.57, -395.18)
 	local ok, wy = hp(finalDrop, finalDrop.Y + 40, rq)
 	if not ok then return false, wy end
 	if not rq then
@@ -688,6 +795,7 @@ local function hm(rq)
 		local ep = o2 and type(r) == "table" and typeof(r.BoundsCFrame) == "CFrame" and r.BoundsCFrame.Position
 		return false, string.format("Home Failed: Not Claimed | %s | Egg %s %s", dw2 or dg(), o2 and type(r) == "table" and tostring(r.State) or "Gone", ep and tostring(math.floor(lv:Dot(ep - lq))) or "?")
 	end
+	cdForce()
 	return true
 end
 
@@ -800,9 +908,6 @@ local function mt()
 	return false, "Treadmill Failed: " .. (st.tr or "Not Mounted")
 end
 
--- ============================================================
--- AUTO PLACE EGG (pe) -- FIX: un() trước khi navigate
--- ============================================================
 local function pe()
 	local u, p = ow()
 	if #u == 0 then return 0, "Place Skipped: Bag Empty" end
@@ -810,7 +915,6 @@ local function pe()
 	st.pf = nil
 	local a = pn()
 	if not a then return 0, "Place Failed: No Pen" end
-	-- Khôi phục humanoid thật trước khi di chuyển đến pen
 	un()
 	fz(false)
 	local h = rt()
@@ -931,9 +1035,20 @@ local function lo(g)
 			lg("Resuming Farm")
 		end
 		fz(false)
+
+		-- ✅ FIX: Nếu đang ở treadmill mà có egg match → xuống ngay
 		if st.bt or tm() then
 			local wy = not cr() and wq()
 			if wy then
+				-- ✅ Có filter và có egg match → xuống lụm
+				local eggs = cd()
+				local hasFilter = next(st.mr) ~= nil or next(st.az) ~= nil
+				if #eggs > 0 and hasFilter then
+					lg("Egg Detected | Leaving Treadmill")
+					lt()
+					task.wait(1)
+					continue
+				end
 				lg(wy .. " | On Treadmill")
 				task.wait(1)
 				continue
@@ -972,12 +1087,29 @@ local function lo(g)
 					hm(false)
 					continue
 				end
+
+				-- ✅ FIX: Nếu có filter → KHÔNG leo treadmill, chờ egg
+				local hasFilter = next(st.mr) ~= nil or next(st.az) ~= nil
+				if hasFilter and not st.atw then
+					lg("No Eggs Match Filter | Waiting (Auto Treadmill OFF)")
+					task.wait(3)
+					continue
+				end
+
 				if (st.pi or st.ap) and os.clock() >= st.pc then
 					st.pc = os.clock() + 15
 					lg("Placing Eggs")
 					local n, wy = pe()
 					lg(string.format("Placed %d%s", n, wy and (" | " .. wy) or ""))
 				end
+
+				-- ✅ Nếu có filter nhưng KHÔNG bật atw → chờ
+				if hasFilter and not st.atw then
+					lg("Waiting For Egg Respawn")
+					task.wait(3)
+					continue
+				end
+
 				if os.clock() >= st.mq then
 					st.mq = os.clock() + 3
 					lg("No Eggs | Mounting Treadmill")
@@ -1008,6 +1140,14 @@ local function lo(g)
 						st.pc = os.clock() + 15
 						lg(string.format("Placed %d%s", n, wy and (" | " .. wy) or ""))
 					end
+
+					local hasFilter2 = next(st.mr) ~= nil or next(st.az) ~= nil
+					if hasFilter2 and not st.atw then
+						lg("Waiting For Day | Not Using Treadmill")
+						task.wait(1)
+						continue
+					end
+
 					if os.clock() >= st.mq then
 						st.mq = os.clock() + 3
 						lg("Waiting For Day | Mounting Treadmill")
@@ -1060,6 +1200,7 @@ local function lo(g)
 				end
 				lg(tostring(wy))
 				task.wait(0.2)
+				cdForce()
 				continue
 			end
 		end
@@ -1081,6 +1222,7 @@ local function lo(g)
 			end
 			task.wait(0.2)
 		end
+		cdForce()
 	end
 	un()
 	lg("Idle")
@@ -1856,8 +1998,8 @@ local function rl(g)
 		lg(mq and ("Race | Map Ready " .. #mq.c) or "Race | Map Failed")
 	end
 	local mc, mj, nj, sk = nil, nil, 0, {}
-	local o5, ts5 = pcall(function() return require(rs.Shared.Flags.MountRaceFlags).TopSpeed:Get() * 2.9 end)
-	ts5 = o5 and type(ts5) == "number" and ts5 or 391
+	local o5, ts5 = pcall(function() return require(rs.Shared.Flags.MountRaceFlags).TopSpeed:Get() * 3.6 end)
+	ts5 = o5 and type(ts5) == "number" and ts5 or 486
 	local pt, rd, ry, rc, rl, tp0, lk, lkt = nil, nil, nil, nil, 0, nil, nil, 0
 	local function bp(t)
 		local a = t:FindFirstChild("AttachmentTrack")
@@ -1868,11 +2010,11 @@ local function rl(g)
 	local hz, er, sr, dr2, sp3, tsp = {}, 5.5, 9, 9, {}, nil
 	local hl2, lsp, lft, sdc, sdt = nil, {}, nil, {}, nil
 	pcall(function()
-		local d = hs2:JSONDecode(readfile("BaKhi/SaeRaceSpots.json"))
+		local d = hs2:JSONDecode(readfile("TungTung/SaeRaceSpots.json"))
 		if type(d) == "table" then lsp = d end
 	end)
 	local function lsv()
-		pcall(function() writefile("BaKhi/SaeRaceSpots.json", hs2:JSONEncode(lsp)) end)
+		pcall(function() writefile("TungTung/SaeRaceSpots.json", hs2:JSONEncode(lsp)) end)
 	end
 	local function lad(q)
 		local nm = tr and tr.Name or "?"
@@ -1993,7 +2135,7 @@ local function rl(g)
 			end
 			if pt then
 				local nw = os.clock()
-				local dt = rc and math.min(nw - rc, 0.2) or 0
+				local dt = rc and math.min(nw - rc, 0.1) or 0
 				rc = nw
 				local sp5, ss0 = ts5 / 2.9, mc and rawget(mc, "SpeedScales")
 				if type(ss0) == "table" then
@@ -2008,9 +2150,9 @@ local function rl(g)
 				local se = lp:GetAttribute("RacePowerUpStunEndsAt")
 				local sn = type(se) == "number" and workspace:GetServerTimeNow() < se
 				if rd and not sn then
-					rd += sp5 * dt
+					rd += sp5 * dt * 1.15
 					cf = pt:FrameAt(rd)
-					if tp0 and (hr.Position - tp0).Magnitude > 45 then rd, rl = pt:Project(hr.Position, rd, 60, 200), 0 cf = pt:FrameAt(rd) end
+					if tp0 and (hr.Position - tp0).Magnitude > 35 then rd, rl = pt:Project(hr.Position, rd, 60, 200), 0 cf = pt:FrameAt(rd) end
 				end
 				if not rd then
 					rd, rl = pt:Project(hr.Position, 0, 0, pt.Length), 0
@@ -2028,7 +2170,7 @@ local function rl(g)
 					local h5 = mq.h[k]
 					if h5 then
 						local of = (mq.c[k] - cf.Position):Dot(cf.RightVector)
-						lo, hi = of - h5 + 12, of + h5 - 12
+						lo, hi = of - h5 + 4, of + h5 - 4
 						if lo > hi then lo, hi = of, of end
 					end
 				end
@@ -2069,7 +2211,7 @@ local function rl(g)
 					end
 				end
 				lk = lt3
-				rl += math.clamp(lt3 - rl, -80 * dt, 80 * dt)
+				rl += math.clamp(lt3 - rl, -200 * dt, 200 * dt)
 				rl = math.clamp(rl, lo, hi)
 				local tp = cf.Position + cf.UpVector * ry + cf.RightVector * rl
 				st.rmv = sn and Vector3.zero or Vector3.new(0, 0, -1)
@@ -2136,15 +2278,14 @@ local function rl(g)
 					local bu, bs = rawget(mc, "BoostUntil"), rawget(mc, "BoostScale")
 					ss[sk] = (type(bu) == "number" and os.clock() < bu and type(bs) == "number" and bs > 0) and 2.9 / bs or 2.9
 				end
-				local up = mc and dv and rawget(rawget(mc, "Rig") or {}, "Root") == hr and rawget(mc, "Grounded") == true and rawget(mc, "StickMinRatio") == nil and rawget(mc, "Up")
+				local up = mc and dv and rawget(rawget(mc, "Rig") or {}, "Root") == hr and rawget(mc, "Grounded") == true and rawget(mc, "Up")
 				if typeof(up) == "Vector3" then
 					local h2 = dv - up * dv:Dot(up)
 					if h2.Magnitude > 0.1 then
 						h2 = h2.Unit
 						rawset(mc, "Heading", h2)
 						rawset(mc, "TravelDirection", h2)
-						local sv = rawget(mc, "Speed")
-						if type(sv) == "number" and sv < ts5 then rawset(mc, "Speed", ts5) end
+						rawset(mc, "Speed", ts5)
 						st.rmv = Vector3.new(0, 0, -1)
 					end
 				end
@@ -2833,13 +2974,13 @@ task.spawn(function()
 		if not kv() then continue end
 		if st.ah then
 			local n = ht()
-			if n > 0 then pcall(appendfile, "BaKhi/SaeLog.txt", string.format("%s Hatched %d\n", os.date("%H:%M:%S"), n)) end
+			if n > 0 then pcall(appendfile, "TungTung/SaeLog.txt", string.format("%s Hatched %d\n", os.date("%H:%M:%S"), n)) end
 		end
 		if st.ps or st.es then
 			local p, e = sc()
 			if #p + #e > 0 then
 				sl(p, e)
-				pcall(appendfile, "BaKhi/SaeLog.txt", string.format("%s Sold %d Pets, %d Eggs\n", os.date("%H:%M:%S"), #p, #e))
+				pcall(appendfile, "TungTung/SaeLog.txt", string.format("%s Sold %d Pets, %d Eggs\n", os.date("%H:%M:%S"), #p, #e))
 			end
 		end
 	end
@@ -3013,7 +3154,7 @@ function L:Window(o)
 		local f = mk("Frame", {Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundColor3 = c.cr, BackgroundTransparency = 0.08, BorderSizePixel = 0, ZIndex = 100, Parent = tsf}, {rc(12), sk(0.6, n.Error and c.er or c.ac), pd(20, 14, 10, 10)})
 		mk("Frame", {Position = UDim2.fromOffset(-12, 2), Size = UDim2.new(0, 3, 1, -4), BackgroundColor3 = n.Error and c.er or c.ac, BorderSizePixel = 0, ZIndex = 101, Parent = f}, {rc(2)})
 		local ly = mk("Frame", {Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, ZIndex = 101, Parent = f}, {ll(2)})
-		tl({Text = tostring(n.Title or "BaKhi Hub"), FontFace = fb, Size = UDim2.new(1, 0, 0, 18), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 102, LayoutOrder = 1, Parent = ly})
+		tl({Text = tostring(n.Title or "TungTung Hub"), FontFace = fb, Size = UDim2.new(1, 0, 0, 18), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 102, LayoutOrder = 1, Parent = ly})
 		if n.Text ~= nil then tl({Text = tostring(n.Text), TextSize = 13, TextColor3 = c.dm, Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, TextWrapped = true, ZIndex = 102, LayoutOrder = 2, Parent = ly}) end
 		local us = mk("UIScale", {Scale = 0.9, Parent = f})
 		tw(us, {Scale = 1}, tb2)
@@ -3029,10 +3170,10 @@ function L:Window(o)
 		W:Notify({Title = "Callback Failed", Text = tostring(e), Error = true})
 	end
 
-	local cp, cd, dirty, pend, dead = o.Config and `BaKhi/Configs/{o.Config}.json`, {}, false, false, false
+	local cp, cd2, dirty, pend, dead = o.Config and `TungTung/Configs/{o.Config}.json`, {}, false, false, false
 	if cp and isfile and isfile(cp) then
 		local ok, d = pcall(function() return hs:JSONDecode(readfile(cp)) end)
-		if ok and type(d) == "table" then cd = d else
+		if ok and type(d) == "table" then cd2 = d else
 			pcall(function() writefile(cp .. ".bad", readfile(cp)); delfile(cp) end)
 			W:Notify({Title = "Config Load Failed", Text = "Invalid Json", Error = true})
 		end
@@ -3042,14 +3183,14 @@ function L:Window(o)
 		dirty = false
 		pcall(function()
 			mkd(cp)
-			writefile(cp, hs:JSONEncode(cd))
+			writefile(cp, hs:JSONEncode(cd2))
 		end)
 	end
 	local function put(e, v)
 		if not e.Flag then return end
 		L.Flags[e.Flag] = v
 		if not cp then return end
-		if e.sv then cd[e.Flag] = e.sv(v) else cd[e.Flag] = v end
+		if e.sv then cd2[e.Flag] = e.sv(v) else cd2[e.Flag] = v end
 		dirty = true
 		if pend or dead then return end
 		pend = true
@@ -3058,7 +3199,7 @@ function L:Window(o)
 	local function done(e)
 		if not e.Flag then return end
 		L.Flags[e.Flag] = e:Get()
-		local s = cd[e.Flag]
+		local s = cd2[e.Flag]
 		if s == nil then return end
 		pcall(function()
 			if e.ld then s = e.ld(s) end
@@ -3089,8 +3230,8 @@ function L:Window(o)
 	table.insert(W.cn, sg:GetPropertyChangedSignal("AbsoluteSize"):Connect(fx))
 
 	local lv = {Full = true, Light = true, Off = true}
-	W.fx, W.ba, W.on, W.bk = lv[cd.fx] and cd.fx or ((uis.TouchEnabled and not uis.MouseEnabled) and "Light" or "Full"), cd.ba ~= false, false, false
-	if type(cd.gd) == "number" and cd.gd == cd.gd then W.gd = math.clamp(cd.gd, 40, 95) / 100 end
+	W.fx, W.ba, W.on, W.bk = lv[cd2.fx] and cd2.fx or ((uis.TouchEnabled and not uis.MouseEnabled) and "Light" or "Full"), cd2.ba ~= false, false, false
+	if type(cd2.gd) == "number" and cd2.gd == cd2.gd then W.gd = math.clamp(cd2.gd, 40, 95) / 100 end
 	cr.BackgroundTransparency = 1 - W.gd
 	local hr = mk("Frame", {AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -65, 1, -55), Size = UDim2.fromOffset(250, 250), BackgroundTransparency = 1, Parent = bgh})
 	local hl, pt = {}, {}
@@ -3295,23 +3436,23 @@ function L:Window(o)
 		end)
 	end)
 
-	local dr
+	local dr2
 	table.insert(W.cn, tb.InputBegan:Connect(function(i)
 		if i.UserInputType ~= mb and i.UserInputType ~= tc then return end
 		local p0, d0 = mn.Position, i.Position
-		dr = {i = i, mv = function(p)
+		dr2 = {i = i, mv = function(p)
 			local s, n, hw, hh = sg.AbsoluteSize, gs:GetGuiInset().Y, mn.AbsoluteSize.X / 2, mn.AbsoluteSize.Y / 2
 			mn.Position = UDim2.fromOffset(math.clamp(p0.X.Offset + p.X - d0.X, hw, s.X - hw), math.clamp(p0.Y.Offset + p.Y - d0.Y, n + hh, s.Y - hh))
 		end}
 	end))
 	table.insert(W.cn, uis.InputChanged:Connect(function(i)
-		if not dr or (i.UserInputType ~= mm and i ~= dr.i) then return end
-		dr.mv(i.Position)
+		if not dr2 or (i.UserInputType ~= mm and i ~= dr2.i) then return end
+		dr2.mv(i.Position)
 	end))
 	table.insert(W.cn, uis.InputEnded:Connect(function(i)
-		if not dr or (i ~= dr.i and i.UserInputType ~= mb) then return end
-		if dr.up then dr.up() end
-		dr = nil
+		if not dr2 or (i ~= dr2.i and i.UserInputType ~= mb) then return end
+		if dr2.up then dr2.up() end
+		dr2 = nil
 	end))
 	table.insert(W.cn, uis.InputBegan:Connect(function(i)
 		if i.UserInputType ~= kb or W.kw or not W.key or i.KeyCode ~= W.key or uis:GetFocusedTextBox() then return end
@@ -3428,16 +3569,16 @@ function L:Window(o)
 
 		function T:Slider(r)
 			r = r or {}
-			local lo, hi, st = tonumber(r.Min), tonumber(r.Max), r.Step == nil and 1 or tonumber(r.Step)
+			local lo, hi, st2 = tonumber(r.Min), tonumber(r.Max), r.Step == nil and 1 or tonumber(r.Step)
 			if not (lo and hi and hi > lo) then error("Slider Failed: Bad Range", 0) end
-			if not (st and st > 0) then error("Slider Failed: Bad Step", 0) end
+			if not (st2 and st2 > 0) then error("Slider Failed: Bad Step", 0) end
 			local e, f = row("Slider", r)
 			local vl = tl({Text = "", FontFace = fj, TextSize = 12, TextColor3 = c.a2, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 0), Size = UDim2.fromOffset(40, 40), TextXAlignment = Enum.TextXAlignment.Right, Parent = f})
 			local hit = bt({AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -52, 0.5, 0), Size = UDim2.fromOffset(110, 28), Parent = f})
 			local tr = mk("Frame", {AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.new(1, 0, 0, 5), BackgroundColor3 = wt, BackgroundTransparency = 0.84, BorderSizePixel = 0, Parent = hit}, {rc(3)})
 			local fi = mk("Frame", {Size = UDim2.new(0, 0, 1, 0), BackgroundColor3 = c.ac, BorderSizePixel = 0, Parent = tr}, {rc(3)})
 			local kn = mk("Frame", {AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.fromOffset(16, 16), BackgroundColor3 = wt, BorderSizePixel = 0, Parent = hit}, {rc(8), sk(0.55, c.ac, 3)})
-			local function q(v) return math.clamp(lo + math.round((v - lo) / st) * st, lo, hi) end
+			local function q(v) return math.clamp(lo + math.round((v - lo) / st2) * st2, lo, hi) end
 			local d0 = r.Default
 			e.v, e.ld = q(type(d0) == "number" and d0 == d0 and d0 or lo), tonumber
 			local function draw()
@@ -3458,7 +3599,7 @@ function L:Window(o)
 			hit.InputBegan:Connect(function(i)
 				if i.UserInputType ~= mb and i.UserInputType ~= tc then return end
 				p.ScrollingEnabled = false
-				dr = {i = i, mv = function(v) at(v.X) end, up = function() p.ScrollingEnabled = true end}
+				dr2 = {i = i, mv = function(v) at(v.X) end, up = function() p.ScrollingEnabled = true end}
 				at(i.Position.X)
 			end)
 			done(e)
@@ -3573,7 +3714,7 @@ function L:Window(o)
 		function T:TextBox(r)
 			r = r or {}
 			local e, f = row("TextBox", r)
-			local b, st = bx(f)
+			local b, st2 = bx(f)
 			b.ClipsDescendants = true
 			local x = mk("TextBox", {BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 0), Size = UDim2.new(1, -20, 1, 0), FontFace = fs, TextSize = 12, TextColor3 = wt, PlaceholderText = tostring(r.Placeholder or ""), PlaceholderColor3 = c.dm, TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false, Text = type(r.Default) == "string" and r.Default or "", Parent = b})
 			e.v, e.ld = x.Text, tostring
@@ -3585,9 +3726,9 @@ function L:Window(o)
 				put(e, v)
 				run(r.Callback, v)
 			end
-			x.Focused:Connect(function() tw(st, {Transparency = 0}) end)
+			x.Focused:Connect(function() tw(st2, {Transparency = 0}) end)
 			x.FocusLost:Connect(function()
-				tw(st, {Transparency = 0.81})
+				tw(st2, {Transparency = 0.81})
 				e:Set(x.Text)
 			end)
 			done(e)
@@ -3605,7 +3746,7 @@ function L:Window(o)
 			local d = kc(r.Default)
 			if d == false then error("Keybind Failed: Bad Key", 0) end
 			local e, f = row("Keybind", r)
-			local cb, st = bx(f, 0)
+			local cb, st2 = bx(f, 0)
 			cb.Size, cb.AutomaticSize = UDim2.fromOffset(0, 24), Enum.AutomaticSize.X
 			pd(10, 10).Parent = cb
 			local kl = tl({Text = "", FontFace = fj, TextSize = 11, Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X, TextXAlignment = Enum.TextXAlignment.Center, Parent = cb})
@@ -3613,7 +3754,7 @@ function L:Window(o)
 			e.v, e.sv, e.ld = d, function(v) return v and v.Name or false end, function(s) return type(s) == "string" and Enum.KeyCode[s] or nil end
 			local function draw()
 				kl.Text, kl.TextColor3 = wk and "..." or (e.v and e.v.Name:upper() or "NONE"), (wk or e.v) and wt or c.dm
-				st.Transparency = wk and 0 or 0.81
+				st2.Transparency = wk and 0 or 0.81
 			end
 			draw()
 			function e:Set(v)
@@ -3676,80 +3817,6 @@ end
 return L
 end)()
 
--- ============================================================
--- LANGUAGE SYSTEM
--- ============================================================
-local LANG = {
-	vi = {
-		-- Tab names
-		["General"] = "Tổng Quan",
-		["Event"] = "Sự Kiện",
-		["Misc"] = "Khác",
-		["Teleport"] = "Dịch Chuyển",
-		["Setting"] = "Cài Đặt",
-		-- Sections
-		["Farm"] = "Nông Trại",
-		["Pet"] = "Thú Cưng",
-		["Egg"] = "Trứng",
-		["Butterfly"] = "Bướm",
-		["Race & Star"] = "Đua & Sao Băng",
-		["Admin"] = "Quản Trị",
-		["Player"] = "Người Chơi",
-		["Server"] = "Máy Chủ",
-		["Game"] = "Trò Chơi",
-		["Interface"] = "Giao Diện",
-		["Language"] = "Ngôn Ngữ",
-		-- Buttons / Toggles
-		["Select Area"] = "Chọn Khu Vực",
-		["Select Egg"] = "Chọn Trứng",
-		["Auto Steal Egg"] = "Tự Động Trộm Trứng",
-		["Auto Place Egg"] = "Tự Động Đặt Trứng",
-		["Auto Hatch Egg"] = "Tự Động Ấp Trứng",
-		["Pet Index"] = "Chỉ Mục Thú Cưng",
-		["Leave Treadmill"] = "Rời Máy Chạy Bộ",
-		["Sell Pet Rarity"] = "Bán Thú Cưng Theo Độ Hiếm",
-		["Auto Sell Pet"] = "Tự Động Bán Thú Cưng",
-		["Sell Egg Rarity"] = "Bán Trứng Theo Độ Hiếm",
-		["Auto Sell Egg"] = "Tự Động Bán Trứng",
-		["Auto Butterfly"] = "Tự Động Bắt Bướm",
-		["Teleport To Station"] = "Dịch Chuyển Đến Trạm",
-		["Auto Shooting Star"] = "Tự Động Bắt Sao Băng",
-		["Auto Race"] = "Tự Động Đua Xe",
-		["Auto Red Light Green Light"] = "Tự Động Đèn Đỏ Đèn Xanh",
-		["Auto T-Rex Run"] = "Tự Động Chạy Khỏi T-Rex",
-		["Anti Stun"] = "Chống Choáng",
-		["Anti Trap"] = "Chống Bẫy",
-		["Hop Server"] = "Chuyển Máy Chủ",
-		["Hop Low Server"] = "Chuyển Máy Chủ Ít Người",
-		["FPS Booster"] = "Tăng FPS",
-		["Effects"] = "Hiệu Ứng",
-		["Glass Density"] = "Độ Trong Kính",
-		["Boot Animation"] = "Hiệu Ứng Khởi Động",
-	},
-	en = {},
-}
-
-local currentLang = "vi"
-
-local function trL(s)
-	if currentLang == "vi" and LANG.vi[s] then return LANG.vi[s] end
-	return s
-end
-
-local function applyLang(W2)
-	for _, T in W2.Tabs do
-		T.nm.Text = trL(T.Name)
-		for _, e in T.Rows do
-			if e.Label and type(e.Name) == "string" then
-				e.Label.Text = trL(e.Name)
-			end
-		end
-	end
-end
-
--- ============================================================
--- BUILD UI TABS
--- ============================================================
 local W = L:Window({Title = "TUNGTUNG HUB", Subtitle = "STEAL AN EGG V9", Config = `StealAnEgg/{lp.Name}`})
 local pg = W:Tab({Name = "General", Icon = "egg"})
 local function rk()
@@ -3793,10 +3860,12 @@ pg:Section({Name = "Farm"})
 local xe, xa
 xa = pg:Dropdown({Name = "Select Area", Options = an(), Multi = true, Default = {}, Flag = "ar", Callback = function(v)
 	st.az = rs2(v)
+	st.ec = 0
 	if #v > 0 and xe then xe:Set({}) end
 end})
 xe = pg:Dropdown({Name = "Select Egg", Options = ra, Multi = true, Default = {}, Flag = "mr", Callback = function(v)
 	st.mr = rs2(v)
+	st.ec = 0
 	if #v > 0 and xa then xa:Set({}) end
 end})
 pg:Toggle({Name = "Auto Steal Egg", Default = false, Flag = "ae", Callback = function(v)
@@ -3806,6 +3875,11 @@ local xp = pg:Toggle({Name = "Auto Place Egg", Default = true, Flag = "ape", Cal
 st.ap = xp.v == true
 local xh = pg:Toggle({Name = "Auto Hatch Egg", Default = true, Flag = "ahe", Callback = function(v) st.ah = v == true end})
 st.ah = xh.v == true
+local xat = pg:Toggle({Name = "Auto Treadmill", Default = true, Flag = "atw", Callback = function(v)
+	st.atw = v
+	if not v and st.bt then lt() end
+end})
+st.atw = xat.v == true
 pg:Toggle({Name = "Pet Index", Default = false, Flag = "pix", Callback = function(v) st.pi = v == true end})
 pg:Button({Name = "Leave Treadmill", Callback = function()
 	local ok, wy = false, "Treadmill Failed: Not Mounted"
@@ -3876,43 +3950,31 @@ mi:Toggle({Name = "Anti Stun", Default = false, Flag = "ast", Callback = functio
 local xt = mi:Toggle({Name = "Anti Trap", Default = true, Flag = "atr", Callback = function(v) aq(v == true) end})
 if xt.v then aq(true) end
 
-local tp2 = W:Tab({Name = "Teleport", Icon = "person-teleport"})
-tp2:Section({Name = "Server"})
-for _, z in {{"Hop Server", false}, {"Hop Low Server", true}} do
-	tp2:Button({Name = z[1], Callback = function()
-		if st.hq then
-			W:Notify({Title = z[1], Text = "Already Hopping"})
-			return
-		end
-		st.hq = true
-		W:Notify({Title = z[1], Text = "Hopping"})
-		task.spawn(function()
-			local ok, wy = hx(z[2])
-			st.hq = false
-			if not ok then W:Notify({Title = z[1], Text = tostring(wy), Error = true}) end
-		end)
-	end})
-end
-
-local tz = W:Tab({Name = "Setting", Icon = "gear"})
-tz:Section({Name = "Game"})
-tz:Button({Name = "FPS Booster", Callback = function()
-	local ok, e = bo()
-	W:Notify({Title = "FPS Booster", Text = ok and "On Until Rejoin" or e, Error = not ok and e ~= "Already On"})
+local stg = W:Tab({Name = "Setting", Icon = "gear"})
+stg:Section({Name = "Game"})
+stg:Button({Name = "FPS Booster", Callback = function()
+	local ok, e = bo2()
+	W:Notify({Title = "FPS Booster", Text = ok and "Đã bật FPS Booster (đến khi rejoin)" or tostring(e), Error = not ok and e ~= "Already On"})
+	if ok then lg("FPS Booster enabled") end
 end})
 
--- Language section
-tz:Section({Name = "Language"})
-tz:Dropdown({Name = "Language", Options = {"Tiếng Việt", "English"}, Default = "Tiếng Việt", Flag = "lang", Callback = function(v)
+stg:Section({Name = "Language"})
+stg:Dropdown({Name = "Language", Options = {"Tiếng Việt", "English"}, Default = "Tiếng Việt", Flag = "lang", Callback = function(v)
 	currentLang = (v == "Tiếng Việt") and "vi" or "en"
 	applyLang(W)
 end})
 
+stg:Section({Name = "Interface"})
+stg:Dropdown({Name = "Effects", Options = {"Full", "Light", "Off"}, Default = "Full", Flag = "fx", Callback = function(v)
+	W:Effects(v or "Full")
+end})
+stg:Slider({Name = "Glass Density", Min = 40, Max = 95, Step = 1, Default = 82, Flag = "gd", Callback = function(v)
+	W.gd = v / 100
+	W.Core.BackgroundTransparency = 1 - W.gd
+end})
+stg:Toggle({Name = "Boot Animation", Default = true, Flag = "ba", Callback = function(v) W.ba = v end})
+
 st.gr = true
-
-W:Interface(tz)
-
--- Apply Vietnamese by default after all tabs are built
 applyLang(W)
 
 local hd = lp:FindFirstChildOfClass("PlayerGui") and lp:FindFirstChildOfClass("PlayerGui"):FindFirstChild("HUD")
@@ -3921,14 +3983,14 @@ for _, n in {"GameHUD", "TradmilHud"} do
 	local rb = hd and hd:FindFirstChild(n) and hd[n]:FindFirstChild("RightButtons")
 	local eb = rb and rb:FindFirstChild("EggsButton")
 	if eb then
-		local o = rb:FindFirstChild("BaKhiButton")
+		local o = rb:FindFirstChild("TungTungButton")
 		if o then o:Destroy() end
 		local b = eb:Clone()
 		for _, k in {"Notification", "ReadyNotification", "NightImage", "NightText", "GamepadGlyph"} do
 			local x = b:FindFirstChild(k)
 			if x then x:Destroy() end
 		end
-		b.Name, b.LayoutOrder = "BaKhiButton", 5
+		b.Name, b.LayoutOrder = "TungTungButton", 5
 		b:SetAttribute("PressBound", nil)
 		local gd2, s1, s2 = b:FindFirstChild("UIGradient"), b:FindFirstChild("UIStroke"), b:FindFirstChild("UIStrokeClr")
 		if gd2 and gd2:IsA("UIGradient") then gd2.Color = ColorSequence.new(Color3.fromRGB(7, 16, 28), Color3.fromRGB(16, 58, 88)) end
