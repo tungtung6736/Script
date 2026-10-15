@@ -1075,18 +1075,7 @@ local function lo(g)
 			task.wait(0.2)
 		end
 	end
-	if not st.sr or ge.__BkSae ~= st or st.g ~= g then return end
-	st.on, st.sr = false, false
-	if st.fp then
-		st.fp = false
-		lg("Idle")
-		return
-	end
-	if st.bt or tm() then
-		lg("Leaving Treadmill")
-		local ok, wy = lt()
-		if not ok then lg(tostring(wy)) end
-	end
+	-- loop exited (on=false or generation changed)
 	un()
 	lg("Idle")
 end
@@ -1108,15 +1097,10 @@ function st.Start()
 end
 
 function st.Stop(f)
-	if st.on and not f then
-		st.sr = true
-		lg("Stopping After Trip")
-		return
-	end
 	st.on, st.sr = false, false
 	local _, hu = rt()
 	local t = os.clock()
-	while hu and hu.Parent and hu.FloorMaterial == Enum.Material.Air and os.clock() - t < 3 do task.wait(0.1) end
+	while hu and hu.Parent and hu.FloorMaterial == Enum.Material.Air and os.clock() - t < 1.5 do task.wait(0.05) end
 	un()
 	lg("Idle")
 end
@@ -3023,7 +3007,7 @@ function L:Window(o)
 		local f = mk("Frame", {Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundColor3 = c.cr, BackgroundTransparency = 0.08, BorderSizePixel = 0, ZIndex = 100, Parent = tsf}, {rc(12), sk(0.6, n.Error and c.er or c.ac), pd(20, 14, 10, 10)})
 		mk("Frame", {Position = UDim2.fromOffset(-12, 2), Size = UDim2.new(0, 3, 1, -4), BackgroundColor3 = n.Error and c.er or c.ac, BorderSizePixel = 0, ZIndex = 101, Parent = f}, {rc(2)})
 		local ly = mk("Frame", {Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, ZIndex = 101, Parent = f}, {ll(2)})
-		tl({Text = tostring(n.Title or "TUNGTUNG HUB"), FontFace = fb, Size = UDim2.new(1, 0, 0, 18), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 102, LayoutOrder = 1, Parent = ly})
+		tl({Text = tostring(n.Title or "BaKhi Hub"), FontFace = fb, Size = UDim2.new(1, 0, 0, 18), TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 102, LayoutOrder = 1, Parent = ly})
 		if n.Text ~= nil then tl({Text = tostring(n.Text), TextSize = 13, TextColor3 = c.dm, Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, TextWrapped = true, ZIndex = 102, LayoutOrder = 2, Parent = ly}) end
 		local us = mk("UIScale", {Scale = 0.9, Parent = f})
 		tw(us, {Scale = 1}, tb2)
@@ -3802,7 +3786,7 @@ local function hx(lo2)
 	return false, "Hop Failed: Stopped"
 end
 
-local W = L:Window({Title = "TUNGTUNG HUB", Subtitle = "STEAL AN EGG v8.0", Config = `StealAnEgg/{lp.Name}`})
+local W = L:Window({Title = "TUNGTUNG HUB", Subtitle = "STEAL AN EGG V8", Config = `StealAnEgg/{lp.Name}`})
 local pg = W:Tab({Name = "General", Icon = "egg"})
 local function rk()
 	local m, o = {}, {}
@@ -3989,4 +3973,3 @@ for _, n in {"GameHUD", "TradmilHud"} do
 	end
 end
 if hb and W.Gui:FindFirstChild("Float") then W.Gui.Float.Visible = false end
-lse end
