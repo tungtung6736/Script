@@ -800,15 +800,21 @@ local function mt()
 	return false, "Treadmill Failed: " .. (st.tr or "Not Mounted")
 end
 
+-- ============================================================
+-- AUTO PLACE EGG (pe) -- FIX: un() trước khi navigate
+-- ============================================================
 local function pe()
 	local u, p = ow()
 	if #u == 0 then return 0, "Place Skipped: Bag Empty" end
 	if st.pf and #p >= st.pf then return 0, "Place Skipped: Pen Full" end
 	st.pf = nil
-	local a, h = pn(), rt()
+	local a = pn()
 	if not a then return 0, "Place Failed: No Pen" end
+	-- Khôi phục humanoid thật trước khi di chuyển đến pen
+	un()
+	fz(false)
+	local h = rt()
 	if not h then return 0, "Place Failed: No Character" end
-	rv()
 	if (h.Position - a).Magnitude > 20 then
 		for _, q in {Vector3.new(h.Position.X, a.Y + 20, h.Position.Z), Vector3.new(a.X, a.Y + 20, a.Z), a + Vector3.new(0, 3, 0)} do
 			local ok, wy = mv(q, nil, 15)
@@ -1076,7 +1082,6 @@ local function lo(g)
 			task.wait(0.2)
 		end
 	end
-	-- loop exited (on=false or generation changed)
 	un()
 	lg("Idle")
 end
@@ -3671,123 +3676,81 @@ end
 return L
 end)()
 
-local function bo()
-	if ge.__SaeP then return nil, "Already On" end
-	ge.__SaeP = true
-	local li, tr = game:GetService("Lighting"), workspace.Terrain
-	local function ko(d, k)
-		k = k or "Enabled"
-		d[k] = false
-		d:GetPropertyChangedSignal(k):Connect(function() if d[k] then d[k] = false end end)
-	end
-	local function lf() if li.GlobalShadows then li.GlobalShadows = false end end
-	lf()
-	li:GetPropertyChangedSignal("GlobalShadows"):Connect(lf)
-	local function kx(d) if d:IsA("PostEffect") then ko(d) end end
-	for _, d in li:GetDescendants() do pcall(kx, d) end
-	li.DescendantAdded:Connect(function(d) pcall(kx, d) end)
-	local cu = tr:FindFirstChildOfClass("Clouds")
-	if cu then pcall(ko, cu) end
-	pcall(function() tr.WaterWaveSize, tr.WaterWaveSpeed, tr.WaterReflectance = 0, 0, 0 end)
-	local function px(d)
-		if d:IsA("ParticleEmitter") then
-			d.Lifetime = NumberRange.new(0)
-			ko(d)
-		elseif d:IsA("Beam") or d:IsA("Trail") or d:IsA("Smoke") or d:IsA("Fire") or d:IsA("Sparkles") or d:IsA("Light") or d:IsA("Highlight") then
-			ko(d)
-		elseif d:IsA("Decal") then
-			d.Transparency = 1
-		elseif d:IsA("SurfaceAppearance") then
-			task.defer(pcall, d.Destroy, d)
-		elseif d:IsA("VideoFrame") then
-			ko(d, "Playing")
-			ko(d, "Visible")
-		elseif d:IsA("BasePart") and d.Material ~= Enum.Material.Water then
-			d.Material, d.Reflectance, d.CastShadow = Enum.Material.SmoothPlastic, 0, false
-		end
-	end
-	workspace.DescendantAdded:Connect(function(d) pcall(px, d) end)
-	task.spawn(function()
-		for i, d in workspace:GetDescendants() do
-			pcall(px, d)
-			if i % 2000 == 0 then task.wait() end
-		end
-	end)
-	local pg2 = lp:FindFirstChildOfClass("PlayerGui")
-	if pg2 then
-		for _, d in pg2:GetDescendants() do if d:IsA("VideoFrame") then pcall(px, d) end end
-		pg2.DescendantAdded:Connect(function(d) if d:IsA("VideoFrame") then pcall(px, d) end end)
-	end
-	local ok, aa = pcall(function() return require(rs.Controllers.Game.Plots.ActiveAssetsController) end)
-	if ok and type(aa) == "table" and type(aa.SetAllPetsHidden) == "function" then
-		task.spawn(function()
-			while ge.__SaeP do
-				pcall(aa.SetAllPetsHidden, true)
-				task.wait(5)
-			end
-		end)
-	end
-	local ui = game:GetService("UserInputService")
-	ui.WindowFocusReleased:Connect(function() pcall(ru.Set3dRenderingEnabled, ru, false) end)
-	ui.WindowFocused:Connect(function() pcall(ru.Set3dRenderingEnabled, ru, true) end)
-	local function ax(d)
-		if d:IsA("Accoutrement") or d:IsA("Clothing") or d:IsA("ShirtGraphic") or d:IsA("CharacterMesh") then task.defer(pcall, d.Destroy, d) end
-	end
-	local function cx(c)
-		for _, d in c:GetDescendants() do pcall(ax, d) end
-		c.DescendantAdded:Connect(function(d) pcall(ax, d) end)
-	end
-	local function pa(p)
-		if p == lp then return end
-		if p.Character then cx(p.Character) end
-		p.CharacterAdded:Connect(cx)
-	end
-	for _, p in ps:GetPlayers() do pa(p) end
-	ps.PlayerAdded:Connect(pa)
-	if not ok then return nil, "Hide Pets Failed: No Controller" end
-	return true
+-- ============================================================
+-- LANGUAGE SYSTEM
+-- ============================================================
+local LANG = {
+	vi = {
+		-- Tab names
+		["General"] = "Tổng Quan",
+		["Event"] = "Sự Kiện",
+		["Misc"] = "Khác",
+		["Teleport"] = "Dịch Chuyển",
+		["Setting"] = "Cài Đặt",
+		-- Sections
+		["Farm"] = "Nông Trại",
+		["Pet"] = "Thú Cưng",
+		["Egg"] = "Trứng",
+		["Butterfly"] = "Bướm",
+		["Race & Star"] = "Đua & Sao Băng",
+		["Admin"] = "Quản Trị",
+		["Player"] = "Người Chơi",
+		["Server"] = "Máy Chủ",
+		["Game"] = "Trò Chơi",
+		["Interface"] = "Giao Diện",
+		["Language"] = "Ngôn Ngữ",
+		-- Buttons / Toggles
+		["Select Area"] = "Chọn Khu Vực",
+		["Select Egg"] = "Chọn Trứng",
+		["Auto Steal Egg"] = "Tự Động Trộm Trứng",
+		["Auto Place Egg"] = "Tự Động Đặt Trứng",
+		["Auto Hatch Egg"] = "Tự Động Ấp Trứng",
+		["Pet Index"] = "Chỉ Mục Thú Cưng",
+		["Leave Treadmill"] = "Rời Máy Chạy Bộ",
+		["Sell Pet Rarity"] = "Bán Thú Cưng Theo Độ Hiếm",
+		["Auto Sell Pet"] = "Tự Động Bán Thú Cưng",
+		["Sell Egg Rarity"] = "Bán Trứng Theo Độ Hiếm",
+		["Auto Sell Egg"] = "Tự Động Bán Trứng",
+		["Auto Butterfly"] = "Tự Động Bắt Bướm",
+		["Teleport To Station"] = "Dịch Chuyển Đến Trạm",
+		["Auto Shooting Star"] = "Tự Động Bắt Sao Băng",
+		["Auto Race"] = "Tự Động Đua Xe",
+		["Auto Red Light Green Light"] = "Tự Động Đèn Đỏ Đèn Xanh",
+		["Auto T-Rex Run"] = "Tự Động Chạy Khỏi T-Rex",
+		["Anti Stun"] = "Chống Choáng",
+		["Anti Trap"] = "Chống Bẫy",
+		["Hop Server"] = "Chuyển Máy Chủ",
+		["Hop Low Server"] = "Chuyển Máy Chủ Ít Người",
+		["FPS Booster"] = "Tăng FPS",
+		["Effects"] = "Hiệu Ứng",
+		["Glass Density"] = "Độ Trong Kính",
+		["Boot Animation"] = "Hiệu Ứng Khởi Động",
+	},
+	en = {},
+}
+
+local currentLang = "vi"
+
+local function trL(s)
+	if currentLang == "vi" and LANG.vi[s] then return LANG.vi[s] end
+	return s
 end
 
-local function hx(lo2)
-	local hs, ts = game:GetService("HttpService"), game:GetService("TeleportService")
-	local function go2(f)
-		local fe
-		local cn = ts.TeleportInitFailed:Connect(function(p, _, m) if p == lp then fe = tostring(m) end end)
-		local o3, e3 = pcall(f)
-		if not o3 then fe = tostring(e3) end
-		local t = os.clock()
-		while not fe and os.clock() - t < 10 do task.wait(0.25) end
-		cn:Disconnect()
-		return fe == nil
-	end
-	while ge.__BkSae == st do
-		local ok, r = pcall(function() return game:HttpGet(("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100"):format(game.PlaceId), true) end)
-		local o2, d = false, nil
-		if ok then o2, d = pcall(hs.JSONDecode, hs, r) end
-		local l = {}
-		for _, v in o2 and type(d) == "table" and type(d.data) == "table" and d.data or {} do
-			if v.id ~= game.JobId and type(v.playing) == "number" and type(v.maxPlayers) == "number" and v.playing < v.maxPlayers then l[#l + 1] = v end
-		end
-		if lo2 then
-			table.sort(l, function(x, y) return x.playing < y.playing end)
-		else
-			for i = #l, 2, -1 do
-				local j = math.random(1, i)
-				l[i], l[j] = l[j], l[i]
+local function applyLang(W2)
+	for _, T in W2.Tabs do
+		T.nm.Text = trL(T.Name)
+		for _, e in T.Rows do
+			if e.Label and type(e.Name) == "string" then
+				e.Label.Text = trL(e.Name)
 			end
 		end
-		for _, v in l do
-			if ge.__BkSae ~= st then return false, "Hop Failed: Stopped" end
-			if go2(function() ts:TeleportToPlaceInstance(game.PlaceId, v.id, lp) end) then return true end
-			task.wait(1)
-		end
-		if not lo2 and ge.__BkSae == st and go2(function() ts:Teleport(game.PlaceId, lp) end) then return true end
-		task.wait(3)
 	end
-	return false, "Hop Failed: Stopped"
 end
 
-local W = L:Window({Title = "TUNGTUNG HUB", Subtitle = "STEAL AN EGG V8", Config = `StealAnEgg/{lp.Name}`})
+-- ============================================================
+-- BUILD UI TABS
+-- ============================================================
+local W = L:Window({Title = "TUNGTUNG HUB", Subtitle = "STEAL AN EGG V9", Config = `StealAnEgg/{lp.Name}`})
 local pg = W:Tab({Name = "General", Icon = "egg"})
 local function rk()
 	local m, o = {}, {}
@@ -3937,9 +3900,20 @@ tz:Button({Name = "FPS Booster", Callback = function()
 	local ok, e = bo()
 	W:Notify({Title = "FPS Booster", Text = ok and "On Until Rejoin" or e, Error = not ok and e ~= "Already On"})
 end})
+
+-- Language section
+tz:Section({Name = "Language"})
+tz:Dropdown({Name = "Language", Options = {"Tiếng Việt", "English"}, Default = "Tiếng Việt", Flag = "lang", Callback = function(v)
+	currentLang = (v == "Tiếng Việt") and "vi" or "en"
+	applyLang(W)
+end})
+
 st.gr = true
 
 W:Interface(tz)
+
+-- Apply Vietnamese by default after all tabs are built
+applyLang(W)
 
 local hd = lp:FindFirstChildOfClass("PlayerGui") and lp:FindFirstChildOfClass("PlayerGui"):FindFirstChild("HUD")
 local hb = false
