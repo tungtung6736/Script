@@ -1,3 +1,19 @@
+local _0xTXT = {
+	CHOOSE_PET="Chọn: pet",FIND_EGG="Tìm trứng",GO_EGG="Đến trứng",GRAB_EGG="Lụm trứng",
+	DELIVER_OK="Giao hàng thành công",DELIVER_FAIL="Giao hàng thất bại",EGG_GONE="Trứng không còn",
+	CANT_REACH="Không đến được trứng",CANT_GRAB="Không lụm được",CANCELLING="Đang huỷ",
+	AUTO_OFF="Auto: TẮT",AUTO_ON="Auto: BẬT",BAY_OFF="Auto Bay: TẮT",BAY_ON="Auto Bay: BẬT",
+	EGG_FAR="Trứng rơi xa, đang TP lại",EGG_NEAR="Trứng rơi gần, lụm lại",GO_HOME="Về nhà",
+	DROP_EGG="Thả trứng qua vạch",REGRAB_EGG="Lụm trứng lại",CANT_REGRAB="Không lụm được trứng",
+	BAY_DONE="Auto Bay: xong",BAY_FAIL="Auto Bay: thất bại",BAY_LOST="Auto Bay: mất trứng, dừng",
+	BAY_DROP="Auto Bay: thả trứng",BAY_LAND="Auto Bay: hạ cánh",BAY_HOME="Auto Bay: về nhà",
+	BAY_FLYING="Auto Bay: đang bay về nhà",WAIT_STABLE="Chờ ổn định...",
+	AUTO_TAKING="Auto: đang lấy ",AUTO_NO_EGG="Auto: không có trứng, thử lại...",
+	FLYING_HOME="Đang bay về",PULLED_BACK="Bị kéo lại, thử ",LAND_NEAR="Hạ cánh gần vạch",
+	LAND_AGAIN="Hạ cánh lại lần ",DELIVERING="Đang giao hàng",ERR="Lỗi: ",
+	CHOOSE="Chọn: ",DELIVERING_ALT="Đang giao hàng",FLYING_HOME_ALT="Đang bay về nhà",
+}
+
 local Pl  = game:GetService("Players")
 local RS  = game:GetService("RunService")
 local Rep = game:GetService("ReplicatedStorage")
@@ -6,7 +22,7 @@ local CG  = game:GetService("CoreGui")
 local lp  = Pl.LocalPlayer
 
 local CFG = {
-	SpeedCap=1.15, HopRatio=1.515, HopMin=40,
+	SpeedCap=1.15, HopRatio=1.000, HopMin=70,
 	HopGap=0.06, HopGapMin=0.06, HopGapMax=0.2,
 	HopRetries=6, HopLift=42, LandOffset=14,
 	LandSettle=0.08, DropDelay=0.05, GrabInterval=0.03,
@@ -306,14 +322,6 @@ end
 
 local setStatus=function() end
 
-local function frzCam()
-	local cam=workspace.CurrentCamera
-	if not cam then return function() end end
-	local ot,fr=cam.CameraType,cam.CFrame
-	pcall(function() cam.CameraType=Enum.CameraType.Scriptable; cam.CFrame=fr end)
-	return function() pcall(function() cam.CameraType=ot end) end
-end
-
 local fpsG=0
 local function fpsOn()
 	if typeof(setfpscap)~="function" then return end
@@ -546,10 +554,10 @@ local function regrab(uid)
 	if st.Cr then return true end
 	local r=rt(); local e=eggPos(uid)
 	if r and e and Vector3.new(r.Position.X-e.X,0,r.Position.Z-e.Z).Magnitude>CFG.RegrabFar then
-		setStatus("Trứng rơi xa, đang TP lại")
+		setStatus(_0xTXT.EGG_FAR)
 		plc(e+Vector3.new(0,3,0))
 	else
-		setStatus("Trứng rơi gần, lụm lại")
+		setStatus(_0xTXT.EGG_NEAR)
 	end
 	return grab(uid,3)
 end
@@ -592,7 +600,7 @@ local function runHome(lX,lZ,cx_ref)
 	local st2=rt()
 	local sp=crySpd(st2 and (Vector3.new(st2.Position.X-hm.X,0,st2.Position.Z-hm.Z).Magnitude+math.max(0,ht)*2) or nil)
 	local last,tm=os.clock(),0
-	setStatus("Về nhà")
+	setStatus(_0xTXT.GO_HOME)
 	while st.Dv<t0 and not cx_ref() and tm<25 do
 		r=rt(); if not r then return false end
 		local now=os.clock(); local dt=math.max(now-last,1/240)
@@ -642,7 +650,7 @@ local function instTP(uid, cx_ref)
 			continue
 		end
 		local nX=x-hpS
-		setStatus(string.format("TP về: X %d",math.floor(nX)))
+		setStatus(_0xTXT.FLYING_HOME)
 		local pb=st.Pa; local hd=0
 		while hd<CFG.HopGap do plc(Vector3.new(nX,hpY,lZ)); hd+=RS.Heartbeat:Wait() end
 		local ck=rt()
@@ -650,14 +658,14 @@ local function instTP(uid, cx_ref)
 		if pl2 and st.Cr and not cx_ref() then
 			re+=1; CFG.HopGap=math.min(CFG.HopGapMax,CFG.HopGap+0.02)
 			if re>CFG.HopRetries then break end
-			setStatus(string.format("Bị kéo lại, thử %d/%d",re,CFG.HopRetries))
+			setStatus(_0xTXT.PULLED_BACK..re.."/"..CFG.HopRetries)
 			local sv=0
 			while sv<0.12 and not cx_ref() do plc(Vector3.new(x,hpY,lZ)); sv+=RS.Heartbeat:Wait() end
 		else
 			x=nX; CFG.HopGap=math.max(CFG.HopGapMin,CFG.HopGap-0.01)
 		end
 	end
-	setStatus("Hạ cánh gần vạch")
+	setStatus(_0xTXT.LAND_NEAR)
 	ld=Vector3.new(ld.X,grndY(ld,ld.Y),ld.Z)
 	local function land()
 		local cu=rt()
@@ -672,17 +680,22 @@ local function instTP(uid, cx_ref)
 		while sv<CFG.LandSettle and not cx_ref() do sv+=RS.Heartbeat:Wait() end
 		local ln=rt()
 		if st.Cr and ln and (ln.Position.X-ld.X>12 or ln.Position.Y<ld.Y-25) then
-			setStatus("Hạ cánh lại lần "..at); land()
+			setStatus(_0xTXT.LAND_AGAIN..at); land()
 		else break end
 	end
 	dpCl()
 	if st.Cr and not cx_ref() then
+		setStatus(_0xTXT.WAIT_STABLE)
+		local settle=0
+		while settle<0.6 and not cx_ref() do settle+=RS.Heartbeat:Wait() end
+		if cx_ref() then fpsOff(); return false end
 		local dl=0
 		while dl<CFG.DropDelay do dl+=RS.Heartbeat:Wait() end
-		setStatus("Thả trứng qua vạch")
+		setStatus(_0xTXT.DROP_EGG)
 		dpEgg()
 		local wd=0
 		while st.Cr and wd<1 and not cx_ref() do wd+=RS.Heartbeat:Wait() end
+		if cx_ref() then fpsOff(); return false end
 		local cu=rt()
 		if cu then
 			pcall(function()
@@ -691,15 +704,18 @@ local function instTP(uid, cx_ref)
 			end)
 		end
 		dpCl()
-		setStatus("Lụm trứng lại")
+		setStatus(_0xTXT.REGRAB_EGG)
 		if not grab(uid,3) and not regrab(uid) then
-			fpsOff(); setStatus("Không lụm được trứng"); return false
+			fpsOff()
+			if cx_ref() then return false end
+			setStatus(_0xTXT.CANT_REGRAB); return false
 		end
 		dpCl()
 	end
 	local ok=false
 	if st.Cr then ok=runHome(lX,lZ,cx_ref) end
 	fpsOff()
+	if cx_ref() then return false end
 	return ok or st.Dv>=t0
 end
 
@@ -708,23 +724,33 @@ local function stealDlv(uid,onDone)
 	st.Bz=true; st.Cx=false
 	task.spawn(function()
 		local ok,err=pcall(function()
-			setStatus("Tìm trứng")
+			setStatus(_0xTXT.FIND_EGG)
 			local e=eggPos(uid)
-			if not e then setStatus("Trứng không còn"); return end
+			if not e then setStatus(_0xTXT.EGG_GONE); return end
 			if st.Cr and st.Uid~=uid then
 				dpEgg(); local wd=0
 				while st.Cr and wd<1 do wd+=RS.Heartbeat:Wait() end
 			end
 			fpsOn()
-			setStatus("Đến trứng")
-			if not runToEgg(uid,e) then fpsOff(); setStatus("Không đến được trứng"); return end
-			setStatus("Lụm trứng")
-			if not grab(uid,4) then fpsOff(); setStatus("Không lụm được"); return end
+			setStatus(_0xTXT.GO_EGG)
+			if not runToEgg(uid,e) then
+				fpsOff()
+				if st.Cx then return end
+				setStatus(_0xTXT.CANT_REACH); return
+			end
+			if st.Cx then fpsOff(); return end
+			setStatus(_0xTXT.GRAB_EGG)
+			if not grab(uid,4) then
+				fpsOff()
+				if st.Cx then return end
+				setStatus(_0xTXT.CANT_GRAB); return
+			end
 			local dv=instTP(uid)
-			setStatus(dv and "Giao hàng thành công" or "Giao hàng thất bại")
+			if st.Cx then return end
+			setStatus(dv and _0xTXT.DELIVER_OK or _0xTXT.DELIVER_FAIL)
 		end)
 		fpsOff(); dpCl()
-		if not ok then setStatus("Lỗi: "..tostring(err)) end
+		if not ok then setStatus(_0xTXT.ERR..tostring(err)) end
 		st.Bz=false
 		if onDone then onDone() end
 	end)
@@ -736,13 +762,13 @@ local function afhFlyHome()
 	afh.Bz=true; afh.Cx=false
 	task.spawn(function()
 		local uid=st.Uid
-		setStatus("Auto Bay: đang bay về nhà")
+		setStatus(_0xTXT.BAY_FLYING)
 		local ok,err=pcall(function()
 			local dv=instTP(uid, function() return afh.Cx end)
-			setStatus(dv and "Auto Bay: xong" or "Auto Bay: thất bại")
+			setStatus(dv and _0xTXT.BAY_DONE or _0xTXT.BAY_FAIL)
 		end)
 		dpCl(); fpsOff()
-		if not ok then setStatus("Auto Bay lỗi: "..tostring(err)) end
+		if not ok then setStatus(_0xTXT.ERR..tostring(err)) end
 		afh.Bz=false
 	end)
 end
@@ -787,9 +813,9 @@ local function startAuto()
 			st.Cx=false
 			if st.Bz then task.wait(0.3); continue end
 			local eggs=getSorted()
-			if #eggs==0 then setStatus("Auto: không có trứng, thử lại..."); task.wait(3); continue end
+			if #eggs==0 then setStatus(_0xTXT.AUTO_NO_EGG); task.wait(3); continue end
 			local tg=eggs[1]
-			setStatus("Auto: đang lấy "..tg.Name)
+			setStatus(_0xTXT.AUTO_TAKING..tg.Name)
 			local dn=false
 			stealDlv(tg.Uid,function() dn=true end)
 			local bw=0
@@ -906,21 +932,21 @@ lst.Parent=bdy; cr(lst,12); lvStr(lst,1,false)
 mk("UIListLayout",{Padding=UDim.new(0,3),SortOrder=Enum.SortOrder.LayoutOrder}).Parent=lst
 mk("UIPadding",{PaddingTop=UDim.new(0,5),PaddingBottom=UDim.new(0,5),PaddingLeft=UDim.new(0,5),PaddingRight=UDim.new(0,6)}).Parent=lst
 
-local sLb=tx(bdy,{Size=UDim2.new(1,0,0,12),Position=UDim2.new(0,0,1,-116),Font=Enum.Font.Gotham,TextSize=9,TextXAlignment=Enum.TextXAlignment.Left,TextTruncate=Enum.TextTruncate.AtEnd,Text="Chọn thú cưng"})
+local sLb=tx(bdy,{Size=UDim2.new(1,0,0,12),Position=UDim2.new(0,0,1,-116),Font=Enum.Font.Gotham,TextSize=9,TextXAlignment=Enum.TextXAlignment.Left,TextTruncate=Enum.TextTruncate.AtEnd,Text=_0xTXT.CHOOSE_PET})
 
 local PUB={
-	["Chọn thú cưng"]=true,["Tìm trứng"]=true,["Đến trứng"]=true,
-	["Lụm trứng"]=true,["Giao hàng thành công"]=true,["Giao hàng thất bại"]=true,
-	["Trứng không còn"]=true,["Không đến được trứng"]=true,
-	["Không lụm được"]=true,["Đang huỷ"]=true,
-	["Auto: TẮT"]=true,["Auto: BẬT"]=true,
-	["Auto Bay: TẮT"]=true,["Auto Bay: BẬT"]=true,
-	["Trứng rơi xa, đang TP lại"]=true,["Trứng rơi gần, lụm lại"]=true,
-	["Về nhà"]=true,["Thả trứng qua vạch"]=true,["Lụm trứng lại"]=true,
-	["Không lụm được trứng"]=true,["Auto Bay: xong"]=true,["Auto Bay: thất bại"]=true,
-	["Auto Bay: mất trứng, dừng"]=true,["Auto Bay: thả trứng"]=true,
-	["Auto Bay: hạ cánh"]=true,["Auto Bay: về nhà"]=true,
-	["Auto Bay: đang bay về nhà"]=true,
+	[_0xTXT.CHOOSE_PET]=true,[_0xTXT.FIND_EGG]=true,[_0xTXT.GO_EGG]=true,
+	[_0xTXT.GRAB_EGG]=true,[_0xTXT.DELIVER_OK]=true,[_0xTXT.DELIVER_FAIL]=true,
+	[_0xTXT.EGG_GONE]=true,[_0xTXT.CANT_REACH]=true,
+	[_0xTXT.CANT_GRAB]=true,[_0xTXT.CANCELLING]=true,
+	[_0xTXT.AUTO_OFF]=true,[_0xTXT.AUTO_ON]=true,
+	[_0xTXT.BAY_OFF]=true,[_0xTXT.BAY_ON]=true,
+	[_0xTXT.EGG_FAR]=true,[_0xTXT.EGG_NEAR]=true,
+	[_0xTXT.GO_HOME]=true,[_0xTXT.DROP_EGG]=true,[_0xTXT.REGRAB_EGG]=true,
+	[_0xTXT.CANT_REGRAB]=true,[_0xTXT.BAY_DONE]=true,[_0xTXT.BAY_FAIL]=true,
+	[_0xTXT.BAY_LOST]=true,[_0xTXT.BAY_DROP]=true,
+	[_0xTXT.BAY_LAND]=true,[_0xTXT.BAY_HOME]=true,
+	[_0xTXT.BAY_FLYING]=true,[_0xTXT.WAIT_STABLE]=true,
 }
 setStatus=function(msg)
 	msg=tostring(msg)
@@ -935,9 +961,9 @@ setStatus=function(msg)
 	then
 		sLb.Text=msg
 	elseif st.Bz then
-		sLb.Text="Đang giao hàng"
+		sLb.Text=_0xTXT.DELIVERING_ALT
 	elseif afh.Bz then
-		sLb.Text="Đang bay về nhà"
+		sLb.Text=_0xTXT.FLYING_HOME_ALT
 	end
 end
 
@@ -974,16 +1000,16 @@ local function updAfh()
 end
 
 btnA.MouseButton1Click:Connect(function()
-	if au.On then stopAuto(); setStatus("Auto: TẮT")
-	else startAuto(); setStatus("Auto: BẬT") end
+	if au.On then stopAuto(); setStatus(_0xTXT.AUTO_OFF)
+	else startAuto(); setStatus(_0xTXT.AUTO_ON) end
 	updAuto()
 end)
 
 btnF.MouseButton1Click:Connect(function()
 	if afh.On then
-		stopAfh(); setStatus("Auto Bay: TẮT")
+		stopAfh(); setStatus(_0xTXT.BAY_OFF)
 	else
-		startAfh(); setStatus("Auto Bay: BẬT")
+		startAfh(); setStatus(_0xTXT.BAY_ON)
 	end
 	updAfh()
 end)
@@ -1007,7 +1033,7 @@ local function mkRow(inf,idx)
 	mk("ImageLabel",{Size=UDim2.fromOffset(22,22),Position=UDim2.fromOffset(3,3),BackgroundTransparency=1,Image=inf.Icon,ScaleType=Enum.ScaleType.Fit}).Parent=fr
 	tx(fr,{Size=UDim2.new(1,-30,0,13),Position=UDim2.fromOffset(28,2),Font=Enum.Font.GothamBold,TextSize=10,TextXAlignment=Enum.TextXAlignment.Left,TextTruncate=Enum.TextTruncate.AtEnd,Text=inf.Name,TextColor3=RC[math.clamp(inf.Rar,1,#RC)] or WH})
 	tx(fr,{Size=UDim2.new(1,-30,0,11),Position=UDim2.fromOffset(28,15),Font=Enum.Font.GothamMedium,TextSize=9,TextXAlignment=Enum.TextXAlignment.Left,Text=fmtMoney(inf.Val)})
-	fr.MouseButton1Click:Connect(function() setSel(inf.Uid); setStatus("Chọn: "..inf.Name) end)
+	fr.MouseButton1Click:Connect(function() setSel(inf.Uid); setStatus(_0xTXT.CHOOSE..inf.Name) end)
 	return {Fr=fr,Sk=rSk,Gd=rGd}
 end
 
@@ -1029,14 +1055,14 @@ local function refresh()
 	for i=#lv,1,-1 do if not lv[i].Parent then table.remove(lv,i) end end
 	if selUid and not live[selUid] then selUid=nil end
 	setSel(selUid)
-	if #infos==0 then setStatus("Chọn thú cưng") end
+	if #infos==0 then setStatus(_0xTXT.CHOOSE_PET) end
 end
 
 btnR.MouseButton1Click:Connect(function() if not st.Bz then refresh() end end)
 
 btnS.MouseButton1Click:Connect(function()
-	if st.Bz then st.Cx=true; setStatus("Đang huỷ"); return end
-	if not selUid then setStatus("Chọn thú cưng"); return end
+	if st.Bz then st.Cx=true; setStatus(_0xTXT.CANCELLING); return end
+	if not selUid then setStatus(_0xTXT.CHOOSE_PET); return end
 	stealDlv(selUid)
 end)
 
