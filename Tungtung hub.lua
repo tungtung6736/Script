@@ -22,7 +22,7 @@ local CG  = game:GetService("CoreGui")
 local lp  = Pl.LocalPlayer
 
 local CFG = {
-	SpeedCap=1.15, HopRatio=1.000, HopMin=70,
+	SpeedCap=1.15, HopRatio=1.515, HopMin=40,
 	HopGap=0.06, HopGapMin=0.06, HopGapMax=0.2,
 	HopRetries=6, HopLift=42, LandOffset=14,
 	LandSettle=0.08, DropDelay=0.05, GrabInterval=0.03,
