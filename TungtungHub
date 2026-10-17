@@ -12,6 +12,9 @@ local _0xTXT = {
 	FLYING_HOME="Đang bay về",PULLED_BACK="Bị kéo lại, thử ",LAND_NEAR="Hạ cánh gần vạch",
 	LAND_AGAIN="Hạ cánh lại lần ",DELIVERING="Đang giao hàng",ERR="Lỗi: ",
 	CHOOSE="Chọn: ",DELIVERING_ALT="Đang giao hàng",FLYING_HOME_ALT="Đang bay về nhà",
+	-- mới
+	CHECK_DROP="Cek posisi drop...",WAIT_DROP="Chờ đúng vị trí...",DROP_OK="Vị trí OK, thả!",
+	DROP_RETRY="Chưa đúng chỗ, TP lại...",
 }
 
 local Pl  = game:GetService("Players")
@@ -22,16 +25,20 @@ local CG  = game:GetService("CoreGui")
 local lp  = Pl.LocalPlayer
 
 local CFG = {
-	SpeedCap=1.15, HopRatio=1.000, HopMin=10,
+	SpeedCap=1.15, HopRatio=2.000, HopMin=10,
 	HopGap=0.06, HopGapMin=0.06, HopGapMax=0.2,
 	HopRetries=6, HopLift=42, LandOffset=14,
 	LandSettle=0.08, DropDelay=0.05, GrabInterval=0.03,
 	RegrabFar=40, Height=70, ClimbShare=0.5,
 	CarryRatio=0.9, EasyRatio=1.3,
+	-- CHECK DROP
+	DropCheckRetries=4,     -- max retry TP ke drop point
+	DropCheckSettle=0.12,   -- tunggu setelah TP sebelum cek posisi
+	DropXTolerance=8,       -- toleransi X dari line (boleh lebih kanan sampai +8)
+	DropYTolerance=20,      -- toleransi Y dari target land Y
 }
 local FPS = {60,30,0.15}
 
--- FIX 1: safeReq with nil guard + warn
 local function safeReq(fn)
 	local ok, r = pcall(function()
 		local inst = fn()
@@ -47,12 +54,11 @@ local ES  = safeReq(function() return Rep:FindFirstChild("Client") and Rep.Clien
 local As  = safeReq(function() return Rep:FindFirstChild("Data") and Rep.Data:FindFirstChild("Assets") end)
 local Mu  = safeReq(function() return Rep:FindFirstChild("Shared") and Rep.Shared:FindFirstChild("Modules") and Rep.Shared.Modules:FindFirstChild("Mutations") end)
 
--- FIX 2: rm() with nil-safe helper
 local function rm(n)
 	local ok, res = pcall(function() return net:FindFirstChild(n) end)
 	return ok and res or nil
 end
-local function rt()   local c=lp.Character; return c and c:FindFirstChild("HumanoidRootPart") end
+local function rt() local c=lp.Character; return c and c:FindFirstChild("HumanoidRootPart") end
 
 local sh = {Or=nil,Cl=nil,Lk={},Co=nil,Ad=nil}
 
@@ -105,7 +111,6 @@ local function grnd(hm)
 	return gSt[hm:GetState()]==true
 end
 
--- FIX 3: shSwap grnd retry logic — don't silently bail, schedule retry
 local shSwapPending = false
 local function shSwap()
 	local c  = lp.Character
@@ -208,7 +213,6 @@ local function rstSt()
 	if st.RC then pcall(st.RC); st.RC=nil end
 end
 
--- FIX 4: ES.CarryChanged — use typeof for metatable-backed signals
 if ES and ES.CarryChanged and typeof(ES.CarryChanged.Connect)=="function" then
 	ES.CarryChanged:Connect(function(a)
 		local cr=type(a)=="table" and a.IsCarrying==true
@@ -224,7 +228,6 @@ if ES and ES.CarryChanged and typeof(ES.CarryChanged.Connect)=="function" then
 	end)
 end
 
--- FIX 5: rm() nil-check before .OnClientEvent access
 do
 	local evVerdict = rm("RE/EggWorld/FieldEggRedeemVerdict")
 	if evVerdict then
@@ -299,7 +302,6 @@ task.spawn(function()
 	end
 end)
 
--- FIX 6: snap() — guard InvokeServer result properly, avoid pairs() on non-table
 local function snap()
 	local li={}
 	local ok,r=pcall(function() return rm("RF/EggWorld/AskFieldEggSnapshot") end)
@@ -324,7 +326,6 @@ local function eggPos(uid)
 	return nil
 end
 
--- FIX 7: desc() — nil-safe As.Directory access
 local function desc(rec)
 	local dir = (As and type(As)=="table") and As.Directory or nil
 	local en  = (type(dir)=="table") and dir[tostring(rec.AssetCategory)] or nil
@@ -640,7 +641,6 @@ local function runHome(lX,lZ,cx_ref)
 	local sp=crySpd(st2 and (Vector3.new(st2.Position.X-hm.X,0,st2.Position.Z-hm.Z).Magnitude+math.max(0,ht)*2) or nil)
 	local last,tm=os.clock(),0
 	setStatus(_0xTXT.GO_HOME)
-	-- FIX: bumped timeout 25→45s for auto bay long fly paths
 	while st.Dv<t0 and not cx_ref() and tm<45 do
 		r=rt(); if not r then return false end
 		local now=os.clock(); local dt=math.max(now-last,1/240)
@@ -669,26 +669,73 @@ local function runHome(lX,lZ,cx_ref)
 		local wd=0
 		while st.Dv<t0 and wd<2 do wd+=RS.Heartbeat:Wait() end
 	end
-	-- FIX case 4: verdict might not fire for auto bay — if egg gone, count as delivered
 	local r2=rt()
 	local nearHome = r2 and Vector3.new(r2.Position.X-hm.X,0,r2.Position.Z-hm.Z).Magnitude < 25
 	return st.Dv>=t0 or (nearHome and not st.Cr)
 end
 
--- ── SHARED: drop → instant regrab ───────────────────────────────────────
--- dùng chung cho cả auto steal lẫn auto bay
+-- ═══════════════════════════════════════════════════════════════════════════
+--  CHECK DROP POSITION — pastikan sudah di zona drop sebelum drop+regrab
+--  Zona valid: r.Position.X <= targetLD.X + DropXTolerance
+--              dan r.Position.Y dalam DropYTolerance dari targetLD.Y
+-- ═══════════════════════════════════════════════════════════════════════════
+local function checkDropPos(ld, cx_ref)
+	cx_ref = cx_ref or function() return st.Cx end
+	local maxTry = CFG.DropCheckRetries
+
+	for attempt = 1, maxTry do
+		if cx_ref() then return false end
+		setStatus(_0xTXT.CHECK_DROP)
+
+		-- settle sebentar dulu biar posisi stabil
+		local sv = 0
+		while sv < CFG.DropCheckSettle and not cx_ref() do
+			sv += RS.Heartbeat:Wait()
+		end
+
+		local r = rt()
+		if not r then return false end
+
+		local xOk = r.Position.X <= ld.X + CFG.DropXTolerance
+		local yOk = math.abs(r.Position.Y - ld.Y) <= CFG.DropYTolerance
+
+		if xOk and yOk then
+			-- posisi valid
+			setStatus(_0xTXT.DROP_OK)
+			return true
+		end
+
+		-- belum di tempat — TP ulang ke ld
+		if attempt < maxTry then
+			setStatus(_0xTXT.DROP_RETRY.." ("..attempt.."/"..maxTry..")")
+			plc(ld)
+			-- zero vel setelah TP
+			local cu = rt()
+			if cu then
+				pcall(function()
+					cu.AssemblyLinearVelocity = Vector3.zero
+					cu.AssemblyAngularVelocity = Vector3.zero
+				end)
+			end
+		end
+	end
+
+	-- semua retry habis, posisi masih belum oke — tetap lanjut (jangan block forever)
+	setStatus(_0xTXT.WAIT_DROP)
+	return false
+end
+-- ─────────────────────────────────────────────────────────────────────────
+
 local function dropAndRegrab(uid, cx_ref)
 	cx_ref = cx_ref or function() return st.Cx end
 
 	setStatus(_0xTXT.DROP_EGG)
 	local preDrop = eggPos(uid)
 
-	-- drop
 	local dl=0
 	while dl<CFG.DropDelay do dl+=RS.Heartbeat:Wait() end
 	dpEgg()
 
-	-- poll workspace chờ egg xuất hiện, tối đa 0.25s
 	local dropPos = nil
 	local pw = 0
 	while pw < 0.25 and not cx_ref() do
@@ -704,7 +751,6 @@ local function dropAndRegrab(uid, cx_ref)
 	dropPos = dropPos or preDrop
 	if cx_ref() then return false end
 
-	-- TP thẳng lên egg + zero vel
 	if dropPos then plc(dropPos + Vector3.new(0,2,0)) end
 	local cu = rt()
 	if cu then
@@ -716,7 +762,6 @@ local function dropAndRegrab(uid, cx_ref)
 
 	setStatus(_0xTXT.REGRAB_EGG)
 
-	-- spam grab 0.4s max, thoát ngay khi có egg
 	local spamT = 0
 	while not st.Cr and spamT < 0.4 and not cx_ref() do
 		local dt = RS.Heartbeat:Wait()
@@ -732,7 +777,6 @@ local function dropAndRegrab(uid, cx_ref)
 		end
 	end
 
-	-- fallback regrab nếu spam miss
 	if not (st.Cr and st.Uid==uid) then
 		if not regrab(uid) then
 			setStatus(_0xTXT.CANT_REGRAB)
@@ -742,8 +786,10 @@ local function dropAndRegrab(uid, cx_ref)
 
 	return st.Cr and st.Uid==uid
 end
--- ─────────────────────────────────────────────────────────────────────────
 
+-- ═══════════════════════════════════════════════════════════════════════════
+--  instTP — patch: checkDropPos sebelum drop+regrab
+-- ═══════════════════════════════════════════════════════════════════════════
 local function instTP(uid, cx_ref)
 	cx_ref = cx_ref or function() return st.Cx end
 	local t0=os.clock(); local lX,lY=lineI()
@@ -756,7 +802,6 @@ local function instTP(uid, cx_ref)
 	st.RC=nil
 	pcall(mkCl); fpsOn()
 
-	-- FIX case 3: already at/past line — skip hop loop, go straight to deliver
 	local skipHop = x <= ld.X + hpS + 2
 
 	if not skipHop then
@@ -794,7 +839,6 @@ local function instTP(uid, cx_ref)
 		plc(ld)
 	end
 	land()
-	-- SPEED: LandSettle 0.08s → 0.04s, max 2 retry attempts instead of 3
 	for at=1,2 do
 		local sv=0
 		while sv<0.04 and not cx_ref() do sv+=RS.Heartbeat:Wait() end
@@ -804,7 +848,15 @@ local function instTP(uid, cx_ref)
 		else break end
 	end
 	dpCl()
+
+	-- ── CHECK DROP POSITION sebelum drop ────────────────────────────────
 	if st.Cr and not cx_ref() then
+		local posOk = checkDropPos(ld, cx_ref)
+		-- posOk = true  → posisi valid, lanjut drop
+		-- posOk = false → sudah max retry atau cx, tetap lanjut
+		--   (jangan block; worst case drop di posisi agak melenceng)
+		if cx_ref() then fpsOff(); return false end
+
 		if not dropAndRegrab(uid, cx_ref) then
 			fpsOff()
 			if cx_ref() then return false end
@@ -812,6 +864,8 @@ local function instTP(uid, cx_ref)
 		end
 		dpCl()
 	end
+	-- ────────────────────────────────────────────────────────────────────
+
 	local deliverOk=false
 	if st.Cr then deliverOk=runHome(lX,lZ,cx_ref) end
 	fpsOff()
@@ -860,7 +914,6 @@ end
 local function afhFlyHome()
 	if afh.Bz then return end
 	if not st.Cr then return end
-	-- FIX: snapshot uid immediately, bail if nil
 	local uid = st.Uid
 	if type(uid) ~= "string" or uid == "" then return end
 	afh.Bz=true; afh.Cx=false
@@ -878,19 +931,16 @@ end
 
 local function startAfh()
 	if afh.On then return end
-	afh.On=true
-	afh.Cx=false  -- FIX: reset cancel flag on every fresh start
+	afh.On=true; afh.Cx=false
 	afh.Th=task.spawn(function()
 		local wasCarry=false
 		while afh.On do
-			task.wait(0.3)
+			task.wait(0.1)
 			local now=st.Cr
-			-- FIX: capture wasCarry BEFORE the inner wait so state is consistent
 			local shouldFire = now and not wasCarry and not afh.Bz and not st.Bz
 			wasCarry=now
 			if shouldFire then
 				task.wait(0.05)
-				-- re-check after micro-wait, uid must also be valid
 				if afh.On and st.Cr and not afh.Bz and not st.Bz
 					and type(st.Uid)=="string" and st.Uid~="" then
 					afhFlyHome()
@@ -902,7 +952,6 @@ end
 
 local function stopAfh()
 	afh.On=false; afh.Cx=true; afh.Bz=false; afh.Th=nil
-	-- FIX: also reset Bz so next startAfh isn't dead-locked
 end
 
 local function getSorted()
@@ -920,7 +969,7 @@ local function startAuto()
 	au.Th=task.spawn(function()
 		while au.On do
 			st.Cx=false
-			if st.Bz then task.wait(0.3); continue end
+			if st.Bz then task.wait(0.1); continue end
 			local eggs=getSorted()
 			if #eggs==0 then setStatus(_0xTXT.AUTO_NO_EGG); task.wait(3); continue end
 			local tg=eggs[1]
@@ -948,6 +997,7 @@ local function stopAuto()
 	au.On=false; au.Th=nil; st.Cx=true
 end
 
+-- ── GUI ──────────────────────────────────────────────────────────────────
 local WH = Color3.fromRGB(255,255,255)
 local SL = Color3.fromRGB(150,150,156)
 local ST = Color3.fromRGB(70,70,76)
@@ -969,7 +1019,6 @@ local function pGui()
 	end
 	return CG
 end
-
 local function mk(cl,pr)
 	local i=Instance.new(cl)
 	for k,v in pairs(pr or {}) do i[k]=v end
@@ -985,7 +1034,6 @@ local function bds(a,b)
 		ColorSequenceKeypoint.new(1,a),
 	})
 end
-
 local function lvStr(p,th,br)
 	local s=mk("UIStroke",{Thickness=th or 1,Color=WH,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	s.Parent=p
@@ -1024,7 +1072,7 @@ end)
 local hdr=mk("Frame",{Size=UDim2.new(1,-8,0,HD-4),Position=UDim2.fromOffset(4,4),BackgroundColor3=WH,BorderSizePixel=0})
 hdr.Parent=win; cr(hdr,10)
 do local g=mk("UIGradient",{Color=bds(WH,SL)}); g.Parent=hdr; lv[#lv+1]=g end
-tx(hdr,{Size=UDim2.new(1,-44,1,0),Position=UDim2.fromOffset(6,0),Font=Enum.Font.GothamBlack,TextSize=10,TextColor3=Color3.new(0,0,0),TextXAlignment=Enum.TextXAlignment.Left,Text="Tungtung Hub v2.3",Lv=false})
+tx(hdr,{Size=UDim2.new(1,-44,1,0),Position=UDim2.fromOffset(6,0),Font=Enum.Font.GothamBlack,TextSize=10,TextColor3=Color3.new(0,0,0),TextXAlignment=Enum.TextXAlignment.Left,Text="Tungtung Hub v2.4",Lv=false})
 
 local function hBtn(lb,of)
 	local b=mk("TextButton",{Size=UDim2.fromOffset(17,14),Position=UDim2.new(1,of,0.5,-7),BackgroundColor3=BG,Font=Enum.Font.GothamBold,TextSize=10,TextColor3=WH,Text=lb,AutoButtonColor=true})
@@ -1056,6 +1104,8 @@ local PUB={
 	[_0xTXT.BAY_LOST]=true,[_0xTXT.BAY_DROP]=true,
 	[_0xTXT.BAY_LAND]=true,[_0xTXT.BAY_HOME]=true,
 	[_0xTXT.BAY_FLYING]=true,[_0xTXT.WAIT_STABLE]=true,
+	[_0xTXT.CHECK_DROP]=true,[_0xTXT.WAIT_DROP]=true,
+	[_0xTXT.DROP_OK]=true,[_0xTXT.DROP_RETRY]=true,
 }
 setStatus=function(msg)
 	msg=tostring(msg)
@@ -1066,6 +1116,8 @@ setStatus=function(msg)
 		or string.sub(msg,1,3)=="TP "
 		or string.sub(msg,1,3)=="Bị "
 		or string.sub(msg,1,4)=="Hạ c"
+		or string.sub(msg,1,3)=="Cek"
+		or string.sub(msg,1,4)=="Chưa"
 		or string.sub(msg,1,3)=="Lỗi"
 	then
 		sLb.Text=msg
@@ -1093,19 +1145,12 @@ btnF.Parent=bdy; cr(btnF,17)
 local fStr,_=lvStr(btnF,1,true)
 
 local function updAuto()
-	if au.On then
-		btnA.Text="Auto Steal: BẬT"; btnA.BackgroundColor3=AON; aStr.Color=AON
-	else
-		btnA.Text="Auto Steal: TẮT"; btnA.BackgroundColor3=AOF; aStr.Color=WH
-	end
+	if au.On then btnA.Text="Auto Steal: BẬT"; btnA.BackgroundColor3=AON; aStr.Color=AON
+	else           btnA.Text="Auto Steal: TẮT"; btnA.BackgroundColor3=AOF; aStr.Color=WH end
 end
-
 local function updAfh()
-	if afh.On then
-		btnF.Text="Auto Bay: BẬT"; btnF.BackgroundColor3=AFN; fStr.Color=AFN
-	else
-		btnF.Text="Auto Bay: TẮT"; btnF.BackgroundColor3=AFF; fStr.Color=WH
-	end
+	if afh.On then btnF.Text="Auto Bay: BẬT"; btnF.BackgroundColor3=AFN; fStr.Color=AFN
+	else           btnF.Text="Auto Bay: TẮT"; btnF.BackgroundColor3=AFF; fStr.Color=WH end
 end
 
 btnA.MouseButton1Click:Connect(function()
@@ -1113,13 +1158,9 @@ btnA.MouseButton1Click:Connect(function()
 	else startAuto(); setStatus(_0xTXT.AUTO_ON) end
 	updAuto()
 end)
-
 btnF.MouseButton1Click:Connect(function()
-	if afh.On then
-		stopAfh(); setStatus(_0xTXT.BAY_OFF)
-	else
-		startAfh(); setStatus(_0xTXT.BAY_ON)
-	end
+	if afh.On then stopAfh(); setStatus(_0xTXT.BAY_OFF)
+	else startAfh(); setStatus(_0xTXT.BAY_ON) end
 	updAfh()
 end)
 
@@ -1147,8 +1188,7 @@ local function mkRow(inf,idx)
 end
 
 local function refresh()
-	local ok,rc=pcall(snap)
-	if not ok then return end
+	local ok,rc=pcall(snap); if not ok then return end
 	local infos={}
 	for _,rec in ipairs(rc) do infos[#infos+1]=desc(rec) end
 	table.sort(infos,function(a,b) return a.Val>b.Val end)
@@ -1168,7 +1208,6 @@ local function refresh()
 end
 
 btnR.MouseButton1Click:Connect(function() if not st.Bz then refresh() end end)
-
 btnS.MouseButton1Click:Connect(function()
 	if st.Bz then st.Cx=true; setStatus(_0xTXT.CANCELLING); return end
 	if not selUid then setStatus(_0xTXT.CHOOSE_PET); return end
@@ -1205,28 +1244,22 @@ btnMn.MouseButton1Click:Connect(function()
 	win.Size=mini and UDim2.fromOffset(W,HD+4) or UDim2.fromOffset(W,H)
 end)
 
--- ── PROXIMITY HOLD DURATION = 0 ──────────────────────────────────────────
-local ppConn = nil
+local ppConn=nil
 local function applyPP()
 	for _,v in ipairs(workspace:GetDescendants()) do
-		if v.ClassName=="ProximityPrompt" then
-			pcall(function() v.HoldDuration=0 end)
-		end
+		if v.ClassName=="ProximityPrompt" then pcall(function() v.HoldDuration=0 end) end
 	end
 end
 local function startPP()
 	applyPP()
-	ppConn = workspace.DescendantAdded:Connect(function(v)
-		if v.ClassName=="ProximityPrompt" then
-			pcall(function() v.HoldDuration=0 end)
-		end
+	ppConn=workspace.DescendantAdded:Connect(function(v)
+		if v.ClassName=="ProximityPrompt" then pcall(function() v.HoldDuration=0 end) end
 	end)
 end
 local function stopPP()
 	if ppConn then ppConn:Disconnect(); ppConn=nil end
 end
 startPP()
--- ─────────────────────────────────────────────────────────────────────────
 
 btnCl.MouseButton1Click:Connect(function()
 	st.Cx=true; afh.Cx=true
@@ -1236,7 +1269,6 @@ btnCl.MouseButton1Click:Connect(function()
 end)
 
 refresh()
-
 task.spawn(function()
 	while gui.Parent do
 		task.wait(3)
